@@ -9,7 +9,7 @@ import motor.relacion.Relacion;
  *
  * @author eddycastro
  */
-public class ImpresorMensajes {
+public class MessagePrinter {
     private static int idSiguienteImpresor = 0;
     private static HashMap<Integer, Impresor> impresores = new HashMap<>();
     
@@ -80,7 +80,7 @@ public class ImpresorMensajes {
      * Permite registrar un nuevo impresor que capture todos los datos impresos.
      * @param nuevoImpresor 
      */
-    public static int registrarImpresor( Impresor nuevoImpresor ){
+    public static int registerPrinter( Impresor nuevoImpresor ){
         impresores.put(idSiguienteImpresor, nuevoImpresor);
         return idSiguienteImpresor++;
     }

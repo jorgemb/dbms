@@ -35,8 +35,8 @@ public class VerboseListener extends BaseErrorListener{
         List<String> stack = ((Parser)recognizer).getRuleInvocationStack();
         Collections.reverse(stack);
         
-        ImpresorMensajes.imprimirMensajeError(String.format("Regla %s", stack));
-        ImpresorMensajes.imprimirMensajeError(String.format("Linea %s: %s en %s: %s", line, charPositionInLine, offendingSymbol, msg));
+        MessagePrinter.imprimirMensajeError(String.format("Regla %s", stack));
+        MessagePrinter.imprimirMensajeError(String.format("Linea %s: %s en %s: %s", line, charPositionInLine, offendingSymbol, msg));
         
         /*
         System.err.println("rule stack: "+stack);

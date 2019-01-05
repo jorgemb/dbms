@@ -70,4 +70,18 @@
     nbproject/build-impl.xml file. 
 
     -->
+    <target name="-pre-compile" >
+	    <java jar="lib/antlr-4.7.2-complete.jar">
+		    <arg value="grammar/SQLGrammar.g4"/>
+		    <arg value="-o"/>
+		    <arg value="src/grammar"/>
+		    <arg value="-package"/>
+		    <arg value="grammar"/>
+		    <arg value="-no-listener"/>
+		    <arg value="-visitor"/>
+	    </java>
+    </target>
+    <target name="-post-clean">
+	    <delete dir="${basedir}/src/grammar/" />
+    </target>
 </project>

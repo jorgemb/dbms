@@ -3,10 +3,10 @@ package conexion;
 import excepciones.ExcepcionBaseDatos;
 import excepciones.ExcepcionDBMS;
 import excepciones.ExcepcionTabla;
-import gramatica.GramaticaSQLLexer;
-import gramatica.GramaticaSQLParser;
-import gramatica.GramaticaSQLVisitor;
-import interfazUsuario.ImpresorMensajes;
+import grammar.SQLGrammarLexer;
+import grammar.SQLGrammarParser;
+import grammar.SQLGrammarVisitor;
+import interfazUsuario.MessagePrinter;
 import interfazUsuario.VerboseListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -58,9 +58,9 @@ public class ManejadorCliente {
         try{
             // ANTLR
             ANTLRInputStream input = new ANTLRInputStream(queryCliente);
-            GramaticaSQLLexer lexer = new GramaticaSQLLexer(input);
+            SQLGrammarLexer lexer = new SQLGrammarLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
-            GramaticaSQLParser parser = new GramaticaSQLParser(tokens);
+            SQLGrammarParser parser = new SQLGrammarParser(tokens);
 
             // Manejo de errores
             parser.removeErrorListeners();
@@ -70,14 +70,14 @@ public class ManejadorCliente {
             ParseTree arbol = parser.program();
 
             // Visitar
-            GramaticaSQLVisitor visitante = new VisitanteSQL();
+            SQLGrammarVisitor visitante = new VisitanteSQL();
             visitante.visit(arbol);
         } catch (ExcepcionBaseDatos excepcionBD){
-            ImpresorMensajes.imprimirMensajeError(excepcionBD.getMessage());
+            MessagePrinter.imprimirMensajeError(excepcionBD.getMessage());
         } catch (ExcepcionTabla excepcionTabla){
-            ImpresorMensajes.imprimirMensajeError(excepcionTabla.getMessage());
+            MessagePrinter.imprimirMensajeError(excepcionTabla.getMessage());
         } catch( ExcepcionDBMS ex ){
-            ImpresorMensajes.imprimirMensajeError(ex.getMessage());
+            MessagePrinter.imprimirMensajeError(ex.getMessage());
         }
     }
 }

@@ -17,15 +17,15 @@ import condicion.NodoRelacional.TipoOperacionRelacional;
 import excepciones.ExcepcionBaseDatos;
 import excepciones.ExcepcionDBMS;
 import excepciones.ExcepcionTabla;
-import gramatica.GramaticaSQLBaseVisitor;
-import gramatica.GramaticaSQLParser;
-import gramatica.GramaticaSQLParser.AccionContext;
-import gramatica.GramaticaSQLParser.ExpOrderContext;
-import gramatica.GramaticaSQLParser.ExpressionContext;
-import gramatica.GramaticaSQLParser.IdValueContext;
-import gramatica.GramaticaSQLParser.ListaConstraintContext;
-import gramatica.GramaticaSQLParser.TipoConstraintContext;
-import interfazUsuario.ImpresorMensajes;
+import grammar.SQLGrammarParser;
+import grammar.SQLGrammarParser.ExpressionContext;
+import grammar.SQLGrammarParser.IdValueContext;
+import grammar.SQLGrammarBaseVisitor;
+import grammar.SQLGrammarParser.ActionContext;
+import grammar.SQLGrammarParser.ConstraintListContext;
+import grammar.SQLGrammarParser.ConstraintTypeContext;
+import grammar.SQLGrammarParser.OrderExpContext;
+import interfazUsuario.MessagePrinter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -54,7 +54,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  *
  * @author eddycastro
  */
-public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
+public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     
     // Contiene la Base de Datos que se encuentra en uso
     private BaseDatos baseDatosActual = null;
@@ -81,7 +81,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return 
      */
     @Override
-    public Object visitProgram(GramaticaSQLParser.ProgramContext ctx){
+    public Object visitProgram(SQLGrammarParser.ProgramContext ctx){
         
 
         visitChildren(ctx);
@@ -89,7 +89,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
         
         // Cuando hay echo disabled, imprimir el resumen.
         if (impresionInsert){       
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Se insertaron %s valores con éxito.", contadorInsert));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Se insertaron %s valores con éxito.", contadorInsert));
             contadorInsert = 0;
             impresionInsert = false;
         }
@@ -107,10 +107,10 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitCreateDatabase(GramaticaSQLParser.CreateDatabaseContext ctx){
+    public Object visitCreateDatabase(SQLGrammarParser.CreateDatabaseContext ctx){
         
         BaseDatos.crear(ctx.ID().getText());
-        ImpresorMensajes.imprimirMensajeUsuario(String.format("Base de datos %s creada con éxito.", ctx.ID().getText()));
+        MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s creada con éxito.", ctx.ID().getText()));
 
         return true;
                
@@ -122,11 +122,11 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitAlterDatabase(GramaticaSQLParser.AlterDatabaseContext ctx){
+    public Object visitAlterDatabase(SQLGrammarParser.AlterDatabaseContext ctx){
         
         // Cambia el nombre de la base de datos
         BaseDatos.renombrar(ctx.ID(0).getText(), ctx.ID(1).getText());
-        ImpresorMensajes.imprimirMensajeUsuario(String.format("Base de datos %s cambió de nombre a %s.", ctx.ID(0).getText(), ctx.ID(1).getText()));
+        MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s cambió de nombre a %s.", ctx.ID(0).getText(), ctx.ID(1).getText()));
 
         return true;
                 
@@ -138,7 +138,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitDropDatabase(GramaticaSQLParser.DropDatabaseContext ctx){
+    public Object visitDropDatabase(SQLGrammarParser.DropDatabaseContext ctx){
         
         // Encontrar la cantidad de registros en una base de datos
         Tabla[] tablasTotales = BaseDatos.buscar(ctx.ID().getText()).obtenerTablas();
@@ -150,12 +150,12 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
         
         
         // Pedir confirmación al usuario
-        boolean borrar = ImpresorMensajes.obtenerConfirmacion(String.format("¿Desea eliminar la base de datos %s con %s registros?", ctx.ID().getText(), cantidadRegistros));
+        boolean borrar = MessagePrinter.obtenerConfirmacion(String.format("¿Desea eliminar la base de datos %s con %s registros?", ctx.ID().getText(), cantidadRegistros));
 
         if (borrar){
             // Elimina la base de datos
             BaseDatos.eliminar(ctx.ID().getText());
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Base de datos %s eliminada con éxito.", ctx.ID().getText()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s eliminada con éxito.", ctx.ID().getText()));
 
             return true;
         } else{
@@ -171,15 +171,15 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitShowDatabases(GramaticaSQLParser.ShowDatabasesContext ctx){
+    public Object visitShowDatabases(SQLGrammarParser.ShowDatabasesContext ctx){
 
-        ImpresorMensajes.imprimirMensajeUsuario("Bases de datos: ");
+        MessagePrinter.imprimirMensajeUsuario("Bases de datos: ");
         
         // Muestra todas las bases de datos
         ArrayList<String> basesDatos = BaseDatos.mostrar();            
         for (String baseDatos : basesDatos) {
 
-            ImpresorMensajes.imprimirMensajeUsuario(baseDatos);
+            MessagePrinter.imprimirMensajeUsuario(baseDatos);
 
         }
 
@@ -193,11 +193,11 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitUseDatabase(GramaticaSQLParser.UseDatabaseContext ctx){
+    public Object visitUseDatabase(SQLGrammarParser.UseDatabaseContext ctx){
         
         // Modificar el String que almancena el nombre de la base de datos actual
         baseDatosActual = BaseDatos.buscar(ctx.ID().getText());
-        ImpresorMensajes.imprimirMensajeUsuario(String.format("Base de datos %s ahora en uso.", ctx.ID().getText()));
+        MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s ahora en uso.", ctx.ID().getText()));
 
         return true;
         
@@ -209,14 +209,14 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitCreateTable(GramaticaSQLParser.CreateTableContext ctx){
+    public Object visitCreateTable(SQLGrammarParser.CreateTableContext ctx){
         
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
             // Crear la tabla en la base de datos
             tablaActual = baseDatosActual.agregarTabla(ctx.ID(0).getText());
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Tabla %s creada en base de datos %s.", ctx.ID(0).getText(), baseDatosActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Tabla %s creada en base de datos %s.", ctx.ID(0).getText(), baseDatosActual.obtenerNombre()));
             
             // Obtener arreglo de id y de tipo columna         
             List<TerminalNode> listaId = ctx.ID();
@@ -228,12 +228,12 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                 
                 if (contador != 0){
                     String nombreColumna = id.getText();
-                    TipoDato tipoColumna = (TipoDato)visit(ctx.tipoColumna(contador-1));
+                    TipoDato tipoColumna = (TipoDato)visit(ctx.columnType(contador-1));
                     tablaActual.agregarColumna(nombreColumna, tipoColumna);
                     
                     // Verifica si es necesario agregar una restriccion
                     if( tipoColumna == TipoDato.CHAR ){
-                        int limiteChar = Integer.parseInt( ctx.tipoColumna(contador-1).int_literal().NUM().getText() );
+                        int limiteChar = Integer.parseInt( ctx.columnType(contador-1).int_literal().NUM().getText() );
                         
                         /* NOTA: Utiliza UUID para asegurar que el nombre de la restricción sea único. */
                         tablaActual.agregarRestriccion( UUID.randomUUID().toString() , 
@@ -243,7 +243,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                     }
                     
                     if (echo){
-                        ImpresorMensajes.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", id.getText(), tablaActual.obtenerNombre()));
+                        MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", id.getText(), tablaActual.obtenerNombre()));
                     }
                     
                 }
@@ -252,8 +252,8 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             }
             
             // Agregar restricciones
-            List<ListaConstraintContext> restricciones = ctx.listaConstraint();
-            for (ListaConstraintContext restriccion : restricciones){
+            List<ConstraintListContext> restricciones = ctx.constraintList();
+            for (ConstraintListContext restriccion : restricciones){
                 
                 visit(restriccion);
                 
@@ -261,7 +261,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -274,12 +274,12 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true
      */
     @Override
-    public Object visitListaConstraint(GramaticaSQLParser.ListaConstraintContext ctx){
+    public Object visitConstraintList(SQLGrammarParser.ConstraintListContext ctx){
         
         // Agregar todas las restricciones
-        List<TipoConstraintContext> restricciones = ctx.tipoConstraint();
+        List<ConstraintTypeContext> restricciones = ctx.constraintType();
         
-        for (TipoConstraintContext restriccion : restricciones){
+        for (ConstraintTypeContext restriccion : restricciones){
             
             visit(restriccion);
             
@@ -295,13 +295,13 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se agrega sin errores
      */
     @Override
-    public Object visitTipoConstraint(GramaticaSQLParser.TipoConstraintContext ctx){
+    public Object visitConstraintType(SQLGrammarParser.ConstraintTypeContext ctx){
         
         // Verificar el tipo constraint
         if (ctx.PRIMARY() != null){
             
             // Obtener las referencias y crear la restricción
-            ArrayList<String> campos = (ArrayList<String>)visit(ctx.listaID(0)); 
+            ArrayList<String> campos = (ArrayList<String>)visit(ctx.idList(0)); 
             ArrayList<String> camposCalificados = new ArrayList<>();
             
             for (String nc : campos){
@@ -314,7 +314,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             // Agregar restricción
             tablaActual.agregarRestriccion(ctx.ID(0).getText(), restriccionPrimaria);
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.obtenerNombre()));
             
             return true;
         } else if (ctx.FOREIGN() != null){
@@ -332,7 +332,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             // Agregar restricción
             tablaActual.agregarRestriccion(ctx.ID(0).getText(), restriccionCheck);
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.obtenerNombre()));
             
             return true;
         }
@@ -345,7 +345,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Tipo de columna
      */
     @Override
-    public Object visitTipoColumna(GramaticaSQLParser.TipoColumnaContext ctx){
+    public Object visitColumnType(SQLGrammarParser.ColumnTypeContext ctx){
         
         if (ctx.INT() != null){
             return TipoDato.INT;
@@ -367,16 +367,16 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitDropTable(GramaticaSQLParser.DropTableContext ctx){
+    public Object visitDropTable(SQLGrammarParser.DropTableContext ctx){
         
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
             // Elminar la tabla de la base de datos
             baseDatosActual.eliminarTabla(ctx.ID().getText());
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("La tabla %s ha sido eliminada de la base de datos %s.", ctx.ID().getText(), baseDatosActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("La tabla %s ha sido eliminada de la base de datos %s.", ctx.ID().getText(), baseDatosActual.obtenerNombre()));
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
 
@@ -389,22 +389,22 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitShowTables(GramaticaSQLParser.ShowTablesContext ctx){
+    public Object visitShowTables(SQLGrammarParser.ShowTablesContext ctx){
         
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Tablas de %s:", baseDatosActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Tablas de %s:", baseDatosActual.obtenerNombre()));
             
             // Mostrar las tablas de la base de datos
             Tabla[] tablas = baseDatosActual.obtenerTablas();
             for (int i = 0; i<tablas.length; i++){
                 
-                ImpresorMensajes.imprimirMensajeUsuario(tablas[i].obtenerNombre());
+                MessagePrinter.imprimirMensajeUsuario(tablas[i].obtenerNombre());
                 
             }
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -417,7 +417,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitShowColumns(GramaticaSQLParser.ShowColumnsContext ctx){
+    public Object visitShowColumns(SQLGrammarParser.ShowColumnsContext ctx){
         
         tablaActual= null;
         
@@ -437,20 +437,20 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             }
             // Verificar que exista la tabla
             if (tablaActual == null){
-                ImpresorMensajes.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
-                ImpresorMensajes.imprimirMensajeUsuario(String.format("Columnas de la tabla %s:", tablaActual.obtenerNombre()));
+                MessagePrinter.imprimirMensajeUsuario(String.format("Columnas de la tabla %s:", tablaActual.obtenerNombre()));
                 
                 // Mostrar todas las columnas
                 HashMap<String, TipoDato> columnas = tablaActual.obtenerColumnas();
                 for (Map.Entry<String, TipoDato> columnaActual : columnas.entrySet()) {
-                    ImpresorMensajes.imprimirMensajeUsuario(String.format("%s %s \n", columnaActual.getKey(), columnaActual.getValue()));
+                    MessagePrinter.imprimirMensajeUsuario(String.format("%s %s \n", columnaActual.getKey(), columnaActual.getValue()));
                 }
             }
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -463,7 +463,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realizó sin errores.
      */
     @Override
-    public Object visitAlterTable(GramaticaSQLParser.AlterTableContext ctx){
+    public Object visitAlterTable(SQLGrammarParser.AlterTableContext ctx){
         
         tablaActual = null;
         
@@ -473,7 +473,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             // Verifificar si es una acción la que se desea realizar
             if (ctx.ID(1) != null){
                 baseDatosActual.renombrarTabla(ctx.ID(0).getText(), ctx.ID(1).getText());
-                ImpresorMensajes.imprimirMensajeUsuario(String.format("Tabla %s cambió de nombre a %S.", ctx.ID(0).getText(), ctx.ID(1).getText()));
+                MessagePrinter.imprimirMensajeUsuario(String.format("Tabla %s cambió de nombre a %S.", ctx.ID(0).getText(), ctx.ID(1).getText()));
             } else{
 
                 Tabla[] tablas = baseDatosActual.obtenerTablas();
@@ -490,14 +490,14 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                 
                 // Verificar que exista la tabla
                 if (tablaActual == null){
-                    ImpresorMensajes.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID(0).getText()));
+                    MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID(0).getText()));
                     return false;
                 } else{
                     
-                    List<AccionContext> acciones =  ctx.accion();
+                    List<ActionContext> acciones =  ctx.action();
                     
                     // Recorrer todas las acciones
-                    for (AccionContext accion : acciones){
+                    for (ActionContext accion : acciones){
                         visit(accion);
                     }
                                   
@@ -505,7 +505,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             }
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -518,19 +518,19 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si no hay errores
      */
     @Override
-    public Object visitAccion(GramaticaSQLParser.AccionContext ctx){
+    public Object visitAction(SQLGrammarParser.ActionContext ctx){
         
         // Acción agregar columna
         if (ctx.ADD() != null && ctx.COLUMN() != null){
             String nombreColumna = ctx.ID().getText();
-            TipoDato tipoColumna = (TipoDato)visit(ctx.tipoColumna());
+            TipoDato tipoColumna = (TipoDato)visit(ctx.columnType());
             
             tablaActual.agregarColumna(nombreColumna, tipoColumna);
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", ctx.ID().getText(), tablaActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", ctx.ID().getText(), tablaActual.obtenerNombre()));
 
             // Verifica si es necesario agregar una restriccion
             if( tipoColumna == TipoDato.CHAR ){
-                int limiteChar = Integer.parseInt( ctx.tipoColumna().int_literal().NUM().getText() );
+                int limiteChar = Integer.parseInt( ctx.columnType().int_literal().NUM().getText() );
 
                 /* NOTA: Utiliza UUID para asegurar que el nombre de la restricción sea único. */
                 tablaActual.agregarRestriccion( UUID.randomUUID().toString() , 
@@ -540,28 +540,28 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             }
             
             // Agregar restricciones
-            if (ctx.listaConstraint() != null){
-                visit(ctx.listaConstraint());
+            if (ctx.constraintList()!= null){
+                visit(ctx.constraintList());
             }
            
             return true;
 
         } else if(ctx.ADD() != null && ctx.CONSTRAINT() != null){
 
-            visit(ctx.tipoConstraint());
+            visit(ctx.constraintType());
 
         // Acción eliminar columna
         } else if(ctx.DROP() != null && ctx.COLUMN() != null){
 
             tablaActual.eliminarColumna(ctx.ID().getText());
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Columna %s eliminada de la tabla %s.", ctx.ID(), tablaActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s eliminada de la tabla %s.", ctx.ID(), tablaActual.obtenerNombre()));
             return true;
 
         // Acción eliminar restricción
         } else if(ctx.DROP() != null && ctx.CONSTRAINT() != null){
 
             tablaActual.eliminarRestriccion(ctx.ID().getText());
-            ImpresorMensajes.imprimirMensajeUsuario(String.format("Restricción %s eliminada de la tabla %s.", ctx.ID(), tablaActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Restricción %s eliminada de la tabla %s.", ctx.ID(), tablaActual.obtenerNombre()));
             return true;
 
         }
@@ -576,7 +576,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se realiza todo con éxito
      */
     @Override
-    public Object visitInsertInto(GramaticaSQLParser.InsertIntoContext ctx){
+    public Object visitInsertInto(SQLGrammarParser.InsertIntoContext ctx){
         
         tablaActual = null;
         
@@ -597,7 +597,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             // Verificar que exista la tabla
             if (tablaActual == null){
-                ImpresorMensajes.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
@@ -607,14 +607,14 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                 Dato dato;
                 
                 // Valores que se van a insertar
-                ArrayList<Object> valores = (ArrayList<Object>)visit(ctx.listaValue());
+                ArrayList<Object> valores = (ArrayList<Object>)visit(ctx.valueList());
                 String[] nombreColumnas = tablaActual.obtenerNombreColumnas();
                  
                 // Caso en el que se especifican columnas
-                if (ctx.listaID() != null){
+                if (ctx.idList()!= null){
                     
                     // Nombres de columnas identificadas
-                    ArrayList<String> nombres = (ArrayList<String>)visit(ctx.listaID());
+                    ArrayList<String> nombres = (ArrayList<String>)visit(ctx.idList());
                     
                     // Verifica que existan suficients valores para la cantidad de columnas
                     if( valores.size() != nombres.size() )
@@ -625,7 +625,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                     for (String nombre : nombres){
                         if (!(nombreColumnasArreglo.contains(nombre))){
                             
-                            ImpresorMensajes.imprimirMensajeError(String.format("La columna %s no se encuentra en la tabla %S", nombre, tablaActual.obtenerNombre()));
+                            MessagePrinter.imprimirMensajeError(String.format("La columna %s no se encuentra en la tabla %S", nombre, tablaActual.obtenerNombre()));
                             return false;
                             
                         }
@@ -659,7 +659,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                 //Construir la fila con los datos obtenidos y agregarla
                 tablaActual.agregarFila(new Fila(datos.toArray(new Dato[0])));
                 if (echo){
-                    ImpresorMensajes.imprimirMensajeUsuario(String.format("Insertados %s valores con éxito", datos.size()));
+                    MessagePrinter.imprimirMensajeUsuario(String.format("Insertados %s valores con éxito", datos.size()));
                 } else{
                     impresionInsert = true;
                     contadorInsert += datos.size();
@@ -669,7 +669,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             }
             
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -681,7 +681,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return ArrayList con los identificadores
      */
     @Override
-    public Object visitListaID(GramaticaSQLParser.ListaIDContext ctx){
+    public Object visitIdList(SQLGrammarParser.IdListContext ctx){
         
         ArrayList<String> identificadores = new ArrayList<>();
         List<TerminalNode> ids = ctx.ID();
@@ -701,7 +701,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Objetos que se obtienen de expression o null en caso de error
      */
     @Override
-    public Object visitListaValue(GramaticaSQLParser.ListaValueContext ctx){
+    public Object visitValueList(SQLGrammarParser.ValueListContext ctx){
       
         List<ExpressionContext> expresiones = ctx.expression();
         ArrayList<Object> objetos = new ArrayList<>();
@@ -732,7 +732,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return NodoDato con el location
      */
     @Override
-    public Object visitLocationExpr(GramaticaSQLParser.LocationExprContext ctx){
+    public Object visitLocationExpr(SQLGrammarParser.LocationExprContext ctx){
         Nodo nodo = (Nodo)visit(ctx.location());
         return nodo;
     }
@@ -743,7 +743,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return NodoDato con location
      */
     @Override
-    public Object visitLocation(GramaticaSQLParser.LocationContext ctx){
+    public Object visitLocation(SQLGrammarParser.LocationContext ctx){
         
         NodoDato nodoRetorno;
         
@@ -764,7 +764,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo con el valor de la literal
      */
     @Override
-    public Object visitInt_literal(GramaticaSQLParser.Int_literalContext ctx){
+    public Object visitInt_literal(SQLGrammarParser.Int_literalContext ctx){
         //Dato valor = new Dato(Integer.valueOf(ctx.NUM().getText()));
         NodoLiteral nodoRetorno = new NodoLiteral(Integer.valueOf(ctx.NUM().getText()), TipoLiteral.INT);
         return nodoRetorno;
@@ -776,7 +776,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo con el valor de la literal
      */
     @Override
-    public Object visitString_literal(GramaticaSQLParser.String_literalContext ctx){
+    public Object visitString_literal(SQLGrammarParser.String_literalContext ctx){
         //Dato valor = new Dato(ctx.STRING().getText());
         String s = ctx.STRING().getText();
         NodoLiteral nodoRetorno = new NodoLiteral(s.substring(1, s.length()-1), TipoLiteral.STRING);
@@ -789,7 +789,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo con el valor de la literal
      */
     @Override
-    public Object visitReal_literal(GramaticaSQLParser.Real_literalContext ctx){
+    public Object visitReal_literal(SQLGrammarParser.Real_literalContext ctx){
         //Dato valor = new Dato(Float.valueOf(ctx.REAL().getText()));
         NodoLiteral nodoRetorno = new NodoLiteral(Float.valueOf(ctx.REAL().getText()), TipoLiteral.FLOAT);
         return nodoRetorno;
@@ -801,7 +801,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo con el valor null
      */
     @Override
-    public Object visitNull_literal(GramaticaSQLParser.Null_literalContext ctx){
+    public Object visitNull_literal(SQLGrammarParser.Null_literalContext ctx){
         NodoLiteral nodoRetorno = new NodoLiteral(null, TipoLiteral.NULL);
         return nodoRetorno;
     }
@@ -812,7 +812,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo de operación 0-expresión
      */
     @Override
-    public Object visitNegExpr(GramaticaSQLParser.NegExprContext ctx){
+    public Object visitNegExpr(SQLGrammarParser.NegExprContext ctx){
         
         Nodo nodo = (Nodo)visit(ctx.expression());
         
@@ -847,16 +847,16 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo operacional con la operación correspondiente
      */
     @Override
-    public Object visitMultdivExpr(GramaticaSQLParser.MultdivExprContext ctx){
+    public Object visitMultdivExpr(SQLGrammarParser.MultdivExprContext ctx){
         
         Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
         Nodo nodoDer = (Nodo)visit(ctx.expression(1));
         
         // Determinar el tipo de operación que se debe realizar
         TipoOperacionOperacional tipo;
-        if (ctx.DIV() != null){
+        if (ctx.DIV_OP()!= null){
             tipo = TipoOperacionOperacional.Division;
-        } else if (ctx.MOD() != null){
+        } else if (ctx.MOD_OP()!= null){
             tipo = TipoOperacionOperacional.Modulo;
         } else {
             tipo = TipoOperacionOperacional.Multiplicacion;
@@ -909,14 +909,14 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo operacional con la operación correspondiente.
      */
     @Override
-    public Object visitAddsubExpr(GramaticaSQLParser.AddsubExprContext ctx){
+    public Object visitAddsubExpr(SQLGrammarParser.AddsubExprContext ctx){
 
         Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
         Nodo nodoDer = (Nodo)visit(ctx.expression(1));
         
         // Determinar el tipo de operación que se debe realizar
         TipoOperacionOperacional tipo;
-        if (ctx.SUMA() != null){
+        if (ctx.SUM_OP()!= null){
             tipo = TipoOperacionOperacional.Suma;
         } else {
             tipo = TipoOperacionOperacional.Resta;
@@ -969,7 +969,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return NodoRelacional correspondiente a la negación del nodo recibido
      */
     @Override
-    public Object visitNotExpr(GramaticaSQLParser.NotExprContext ctx){
+    public Object visitNotExpr(SQLGrammarParser.NotExprContext ctx){
         
         Nodo nodo = (Nodo)visit(ctx.expression());
         
@@ -994,7 +994,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return  Nodo relacional con la operación correspondiente
      */
     @Override
-    public Object visitRelExpr(GramaticaSQLParser.RelExprContext ctx){
+    public Object visitRelExpr(SQLGrammarParser.RelExprContext ctx){
         
         Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
         Nodo nodoDer = (Nodo)visit(ctx.expression(1));
@@ -1060,7 +1060,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo relacional que representa la operación correspondinte
      */
     @Override
-    public Object visitEqExpr(GramaticaSQLParser.EqExprContext ctx){
+    public Object visitEqExpr(SQLGrammarParser.EqExprContext ctx){
         
         Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
         Nodo nodoDer = (Nodo)visit(ctx.expression(1));
@@ -1068,7 +1068,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
         // Determinar el tipo de operación que se debe realizar
         TipoOperacionRelacional tipo;
         
-        if (ctx.eq_op().IGUAL() != null){
+        if (ctx.eq_op().EQUALITY_OP()!= null){
             tipo = TipoOperacionRelacional.Igual;
         }  else{
             tipo = TipoOperacionRelacional.Diferente;
@@ -1107,7 +1107,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return 
      */
     @Override
-    public Object visitParenthesisExpr(GramaticaSQLParser.ParenthesisExprContext ctx) {
+    public Object visitParenthesisExpr(SQLGrammarParser.ParenthesisExprContext ctx) {
         return visit(ctx.expression());
     }
     
@@ -1119,7 +1119,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return NodoCondicional que representa la operación correspondiente
      */
     @Override
-    public Object visitAndExpr(GramaticaSQLParser.AndExprContext ctx){
+    public Object visitAndExpr(SQLGrammarParser.AndExprContext ctx){
         
         Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
         Nodo nodoDer = (Nodo)visit(ctx.expression(1));
@@ -1157,7 +1157,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Nodo condicional con la operación corresponiente
      */
     @Override
-    public Object visitOrExpr(GramaticaSQLParser.OrExprContext ctx){
+    public Object visitOrExpr(SQLGrammarParser.OrExprContext ctx){
         
         Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
         Nodo nodoDer = (Nodo)visit(ctx.expression(1));
@@ -1195,7 +1195,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return 
      */
     @Override
-    public Object visitUpdate(GramaticaSQLParser.UpdateContext ctx){
+    public Object visitUpdate(SQLGrammarParser.UpdateContext ctx){
         
         tablaActual = null;
         
@@ -1216,13 +1216,13 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             // Verificar que exista la tabla
             if (tablaActual == null){
-                ImpresorMensajes.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
                 
                 // Obtener la lista de valores
-                HashMap<String, Expresion> mapa = (HashMap<String, Expresion>)visit(ctx.listaIDValue());
+                HashMap<String, Expresion> mapa = (HashMap<String, Expresion>)visit(ctx.idValueList());
                 
                 // Verificar que tenga un where
                 if (ctx.WHERE() != null){
@@ -1231,7 +1231,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                     int cambios = tablaActual.actualizarFilas(mapa, condicion);
                     
                     // Imprime mensaje de cambios
-                    ImpresorMensajes.imprimirMensajeUsuario(String.format("Se actualizaron %d filas.", cambios));
+                    MessagePrinter.imprimirMensajeUsuario(String.format("Se actualizaron %d filas.", cambios));
                     
                     return true;
                     
@@ -1242,7 +1242,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                     int cambios = tablaActual.actualizarFilas(mapa, condicion);
                     
                     // Imprime mensaje de cambios
-                    ImpresorMensajes.imprimirMensajeUsuario(String.format("Se actualizaron %d filas.", cambios));
+                    MessagePrinter.imprimirMensajeUsuario(String.format("Se actualizaron %d filas.", cambios));
                     
                     return true;
                     
@@ -1251,7 +1251,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             }
             
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -1263,7 +1263,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Mapa con todos los valores correspondientes
      */
     @Override
-    public Object visitListaIDValue(GramaticaSQLParser.ListaIDValueContext ctx){
+    public Object visitIdValueList(SQLGrammarParser.IdValueListContext ctx){
         
         HashMap<String, Expresion> mapa = new HashMap<>();
         
@@ -1282,7 +1282,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Mapa con los valores correspondientes
      */
     @Override
-    public Object visitIdValue(GramaticaSQLParser.IdValueContext ctx){
+    public Object visitIdValue(SQLGrammarParser.IdValueContext ctx){
         
         HashMap<String, Expresion> mapa = new HashMap<>();
         Expresion expresion = new Expresion((Nodo)visit(ctx.expression()));
@@ -1298,7 +1298,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se elminan
      */
     @Override
-    public Object visitDeleteFrom(GramaticaSQLParser.DeleteFromContext ctx){
+    public Object visitDeleteFrom(SQLGrammarParser.DeleteFromContext ctx){
         
         tablaActual = null;
         
@@ -1319,7 +1319,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             // Verificar que exista la tabla
             if (tablaActual == null){
-                ImpresorMensajes.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
@@ -1328,7 +1328,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                     
                     Condicion condicion = new Condicion((Nodo)visit(ctx.expression()));
                     int cantidadEliminado = tablaActual.eliminarFilas(condicion);
-                    ImpresorMensajes.imprimirMensajeUsuario(String.format("Se han eliminado de la tabla %s %d fila(s).",tablaActual.obtenerNombre(), cantidadEliminado));
+                    MessagePrinter.imprimirMensajeUsuario(String.format("Se han eliminado de la tabla %s %d fila(s).",tablaActual.obtenerNombre(), cantidadEliminado));
                     return true;
                     
                 } else{
@@ -1336,7 +1336,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                     NodoLiteral nodoDummy = new NodoLiteral("true", TipoLiteral.STRING);
                     Condicion condicion = new CondicionTrue(nodoDummy);
                     tablaActual.eliminarFilas(condicion);
-                    ImpresorMensajes.imprimirMensajeUsuario(String.format("Se han elminado todas las filas de la tabla %s", tablaActual.obtenerNombre()));
+                    MessagePrinter.imprimirMensajeUsuario(String.format("Se han elminado todas las filas de la tabla %s", tablaActual.obtenerNombre()));
                     return true;
                     
                 }
@@ -1344,7 +1344,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             }
             
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -1356,7 +1356,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se ejecuta con éxito
      */
     @Override
-    public Object visitSelect(GramaticaSQLParser.SelectContext ctx){
+    public Object visitSelect(SQLGrammarParser.SelectContext ctx){
         
          tablaActual = null;
          Relacion relacionFinal;
@@ -1368,11 +1368,11 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             boolean all = true;
             
             // Operar el from
-            if (ctx.listaID(1) != null){
-                tablas = (ArrayList<String>)visit(ctx.listaID(1));
+            if (ctx.idList(1) != null){
+                tablas = (ArrayList<String>)visit(ctx.idList(1));
                 all = false;
             } else{
-                tablas = (ArrayList<String>)visit(ctx.listaID(0));
+                tablas = (ArrayList<String>)visit(ctx.idList(0));
             }
             ArrayList<Relacion> relacionesTablas = new ArrayList<>();
             ArrayList<String[]> columnasTabla = new ArrayList<>();
@@ -1462,7 +1462,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             if (!all){
                 
-                ArrayList<String> col = (ArrayList<String>)visit(ctx.listaID(0));
+                ArrayList<String> col = (ArrayList<String>)visit(ctx.idList(0));
                 
                 // Recorrer cada una de las columnas
                 for (String columna : col){
@@ -1488,7 +1488,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
                 if (col.size() != columnasSelect.size()){
                     
                     
-                    ImpresorMensajes.imprimirMensajeError("Las columnas especificadas no existen en la relación");
+                    MessagePrinter.imprimirMensajeError("Las columnas especificadas no existen en la relación");
                     return false;
                     
                 }
@@ -1510,14 +1510,14 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             // Operar el order
             if (ctx.ORDER() != null){
                 
-                LinkedHashMap<String, TipoOrdenamiento> mapa = (LinkedHashMap<String, TipoOrdenamiento>)visit(ctx.listaOrder());
+                LinkedHashMap<String, TipoOrdenamiento> mapa = (LinkedHashMap<String, TipoOrdenamiento>)visit(ctx.orderList());
                 Relacion relacionOrdenamiento = new RelacionOrdenamiento(relacionFinal, mapa);
-                ImpresorMensajes.imprimirRelacion(relacionOrdenamiento);
+                MessagePrinter.imprimirRelacion(relacionOrdenamiento);
                 return true;
                 
             } else {
                 
-                ImpresorMensajes.imprimirRelacion(relacionFinal);
+                MessagePrinter.imprimirRelacion(relacionFinal);
                 return true;
                 
             }
@@ -1527,7 +1527,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
             
             
         } else{
-            ImpresorMensajes.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -1540,12 +1540,12 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return Listado con LinkedHashMaps correspondientes
      */
     @Override
-    public Object visitListaOrder(GramaticaSQLParser.ListaOrderContext ctx){
+    public Object visitOrderList(SQLGrammarParser.OrderListContext ctx){
         
         LinkedHashMap<String, TipoOrdenamiento> mapa = new LinkedHashMap<>();
         
         // Visitar id value y agregar al mapa acutal todos los elementos que retorna
-        for (ExpOrderContext valor : ctx.expOrder()){
+        for (OrderExpContext valor : ctx.orderExp()){
             mapa.putAll((HashMap<String, TipoOrdenamiento>)visit(valor)); 
         }
         
@@ -1558,7 +1558,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return LinkedHashMap con los datos correspondientes
      */
     @Override
-    public Object visitExpOrder(GramaticaSQLParser.ExpOrderContext ctx){
+    public Object visitOrderExp(SQLGrammarParser.OrderExpContext ctx){
         
         HashMap<String, TipoOrdenamiento> mapa = new HashMap<>();
         String campo;
@@ -1577,8 +1577,8 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
         
         // Verificar tipo de ordenamiento
         TipoOrdenamiento tipoOrdenamiento;
-        if (ctx.tipoOrder() != null){
-            if (ctx.tipoOrder().DESC() != null){
+        if (ctx.orderType()!= null){
+            if (ctx.orderType().DESC() != null){
                 tipoOrdenamiento = TipoOrdenamiento.DESCENDENTE;
             } else{
                 tipoOrdenamiento = TipoOrdenamiento.ASCENDENTE;
@@ -1600,7 +1600,7 @@ public class VisitanteSQL extends GramaticaSQLBaseVisitor<Object>{
      * @return true si se activa, false si se desactiva
      */
     @Override
-    public Object visitEcho(GramaticaSQLParser.EchoContext ctx){
+    public Object visitEcho(SQLGrammarParser.EchoContext ctx){
         if (ctx.ENABLED() != null){
             echo = true;
             return true;

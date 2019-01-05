@@ -4,11 +4,11 @@ package GUI;
 import excepciones.ExcepcionBaseDatos;
 import excepciones.ExcepcionDBMS;
 import excepciones.ExcepcionTabla;
-import gramatica.GramaticaSQLLexer;
-import gramatica.GramaticaSQLParser;
-import gramatica.GramaticaSQLVisitor;
+import grammar.SQLGrammarLexer;
+import grammar.SQLGrammarParser;
+import grammar.SQLGrammarVisitor;
 import interfazUsuario.Impresor;
-import interfazUsuario.ImpresorMensajes;
+import interfazUsuario.MessagePrinter;
 import interfazUsuario.VerboseListener;
 import java.awt.BorderLayout;
 import java.awt.GridBagLayout;
@@ -31,20 +31,21 @@ import motor.TipoDato;
 import motor.relacion.Esquema;
 import motor.relacion.Fila;
 import motor.relacion.Relacion;
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import visitante.VisitanteSQL;
 
 /**
- *
+ * Basic GUI for interacting with the DBMS.
  * @author Jorge
  */
 public class GUI extends JFrame{
-    private JTextArea txtCodigo;
-    private JButton btnEjecutar;
-    private JTextPane txtResultados;
-    private StringBuilder textoResultados = new StringBuilder();
+    private JTextArea txtCode;
+    private JButton btnExecute;
+    private JTextPane txtResults;
+    private StringBuilder resultsText = new StringBuilder();
 
     /**
      * Constructor.
@@ -57,7 +58,7 @@ public class GUI extends JFrame{
         this.setLocationByPlatform(true);
         this.setSize( 600, 600 );
         
-        ImpresorMensajes.registrarImpresor( new ImpresorGUI() );
+        MessagePrinter.registerPrinter( new ImpresorGUI() );
         
         inicializarComponentes();
 //        this.pack();
@@ -71,8 +72,8 @@ public class GUI extends JFrame{
         
         // Código de ingreso
         GBC layout = new GBC(0, 0, 2, 1).setFill(GBC.BOTH).setWeight(1.0f, 0.5f);
-        txtCodigo = new JTextArea();
-        JScrollPane scrollCodigo = new JScrollPane( txtCodigo );
+        txtCode = new JTextArea();
+        JScrollPane scrollCodigo = new JScrollPane( txtCode );
         scrollCodigo.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollCodigo.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         
@@ -82,8 +83,8 @@ public class GUI extends JFrame{
         
         // Botón de ejecutar
         layout = new GBC(0, 1, 1, 1).setAnchor(GBC.WEST);
-        btnEjecutar = new JButton("Ejecutar");
-        btnEjecutar.addActionListener( new ActionListener(){
+        btnExecute = new JButton("Ejecutar");
+        btnExecute.addActionListener( new ActionListener(){
 
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -91,9 +92,9 @@ public class GUI extends JFrame{
             }
             
         });
-        pnlPrincipal.add(btnEjecutar, layout);
+        pnlPrincipal.add(btnExecute, layout);
         
-        txtCodigo.addKeyListener(new KeyAdapter() {
+        txtCode.addKeyListener(new KeyAdapter() {
 
             @Override
             public void keyPressed(KeyEvent ke) {
@@ -105,11 +106,11 @@ public class GUI extends JFrame{
         
         // Botón de salidas
         layout = new GBC(0, 2, 2, 1).setFill(GBC.BOTH).setWeight(1.0f, 0.4f);
-        txtResultados = new JTextPane();
-        txtResultados.setContentType("text/html");
-        txtResultados.setEditable(false);
+        txtResults = new JTextPane();
+        txtResults.setContentType("text/html");
+        txtResults.setEditable(false);
         
-        JScrollPane panelResultados = new JScrollPane(txtResultados);
+        JScrollPane panelResultados = new JScrollPane(txtResults);
         panelResultados.setBorder(BorderFactory.createTitledBorder("Resultados"));
         pnlPrincipal.add(panelResultados, layout);
         
@@ -119,16 +120,16 @@ public class GUI extends JFrame{
     }
 
     private void onButtonPress(){
-        String entrada = txtCodigo.getText();
-        textoResultados.setLength(0);
-        txtResultados.setText("");
+        String entrada = txtCode.getText();
+        resultsText.setLength(0);
+        txtResults.setText("");
         
         try{
             // ANTLR
-            ANTLRInputStream input = new ANTLRInputStream(entrada);
-            GramaticaSQLLexer lexer = new GramaticaSQLLexer(input);
+            CharStream input = CharStreams.fromString(entrada);
+            SQLGrammarLexer lexer = new SQLGrammarLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
-            GramaticaSQLParser parser = new GramaticaSQLParser(tokens);
+            SQLGrammarParser parser = new SQLGrammarParser(tokens);
 
             // Manejo de errores
             parser.removeErrorListeners();
@@ -138,14 +139,14 @@ public class GUI extends JFrame{
             ParseTree arbol = parser.program();
 
             // Visitar
-            GramaticaSQLVisitor visitante = new VisitanteSQL();
+            SQLGrammarVisitor visitante = new VisitanteSQL();
             visitante.visit(arbol);
         } catch (ExcepcionBaseDatos excepcionBD){
-            ImpresorMensajes.imprimirMensajeError(excepcionBD.getMessage());
+            MessagePrinter.imprimirMensajeError(excepcionBD.getMessage());
         } catch (ExcepcionTabla excepcionTabla){
-            ImpresorMensajes.imprimirMensajeError(excepcionTabla.getMessage());
+            MessagePrinter.imprimirMensajeError(excepcionTabla.getMessage());
         } catch( ExcepcionDBMS ex ){
-            ImpresorMensajes.imprimirMensajeError(ex.getMessage());
+            MessagePrinter.imprimirMensajeError(ex.getMessage());
         }
     }
 
@@ -158,46 +159,46 @@ public class GUI extends JFrame{
         @Override
         public void imprimirMensaje(String txtMensaje) {
 //            textoResultados.append("<p>").append(txtMensaje).append( "</p>");
-            textoResultados.append(txtMensaje).append("<br/>");
-            txtResultados.setText(textoResultados.toString());
+            resultsText.append(txtMensaje).append("<br/>");
+            txtResults.setText(resultsText.toString());
         }
 
         @Override
         public void imprimirError(String txtError) {
 //            textoResultados.append( "<p><font color='red'>" + txtError + "</font></p>" );
-            textoResultados.append("<font color='red'>").append(txtError).append("</font><br/>");
-            txtResultados.setText(textoResultados.toString());
+            resultsText.append("<font color='red'>").append(txtError).append("</font><br/>");
+            txtResults.setText(resultsText.toString());
         }
 
         @Override
         public void imprimirRelacion(Relacion relacion) {
-            textoResultados.append("<table border=\"1\">");
+            resultsText.append("<table border=\"1\">");
             
             // Imprime el esquema
-            textoResultados.append("<tr>");
+            resultsText.append("<tr>");
             Esquema esquema = relacion.obtenerEsquema();
             TipoDato[] tipos = esquema.obtenerTipos();
             for (int i = 0; i < esquema.obtenerTamaño(); i++) {
-                textoResultados.append(String.format("<th>%s(%s)</th>", 
+                resultsText.append(String.format("<th>%s(%s)</th>", 
                         relacion.obtenerNombreCalificado(i), tipos[i]) );
             }
-            textoResultados.append("</tr>");
+            resultsText.append("</tr>");
             
             // Imprime las líneas
             int cantidad = 0;
             for (Fila filaActual : relacion) {
-                textoResultados.append("<tr>");
+                resultsText.append("<tr>");
                 for( Dato dato: filaActual ){
-                    textoResultados.append(String.format("<td>%s</td>", dato.representacion()));
+                    resultsText.append(String.format("<td>%s</td>", dato.representacion()));
                 }
-                textoResultados.append("</tr>");
+                resultsText.append("</tr>");
                 ++cantidad;
             }
             
-            textoResultados.append("</table>");
-            textoResultados.append("Se encontraron ").append(cantidad).append(" filas.</br>");
+            resultsText.append("</table>");
+            resultsText.append("Se encontraron ").append(cantidad).append(" filas.</br>");
             
-            txtResultados.setText(textoResultados.toString());
+            txtResults.setText(resultsText.toString());
         }
 
         @Override

@@ -1,0 +1,86 @@
+// ----------------DDL----------------
+
+createDatabase : CREATE DATABASE ID;
+
+alterDatabase : ALTER DATABASE ID RENAME TO ID;
+
+dropDatabase : DROP DATABASE ID;
+
+showDatabses : SHOW DATABASES;
+
+useDatabase : USE DATABASE ID;
+
+tipoColumna : INT
+            | FLOAT
+            | DATE
+            | CHAR
+            ;
+
+listaID : (ID)(',' ID)*;
+
+intLiteral : NUM;
+
+tipoConstraint : ID PRIMARY KEY '(' listaID ')'
+               | ID FOREIGN KEY '(' listaID ')'   REFERENCES ID '(' listaID ')'
+               | ID CHECK ( expression )
+               ;
+
+// Puede ser un DESASTRE TOTAL (pero reparable)
+createTable : CREATE TABLE ID '(' ( (ID tipoColumna)(',' ID tipoColumna)* (CONSTRAINT tipoConstraint)(',' (CONSTRAINT tipoConstraint)*) ')' );
+
+accion : ADD COLUMN ID tipoColumna CONSTRAINT (tipoConstraint)(',' tipoConstraint)*
+       | ADD CONSTRAINT tipoConstraint
+       | DROP COLUMN ID
+       | DROP CONSTRAINT ID
+       ;
+
+alterTable : ALTER TABLE ID RENAME TO ID
+           | ALTER TABLE ID (accion)(',' accion)*
+           ;
+
+dropTable : DROP TABLE ID;
+
+showTables : SHOW TABLES;
+
+showColumns : SHOW COLUMNS FROM ID;
+
+
+//----------------DML----------------
+
+
+
+listaValue : (expression)(',' expression)*;
+
+idValue : ID '=' expression;
+
+listaIDValue : (idValue)(',' idValue)*;
+
+insertInto : INSERT INTO ID ('(' listaID ')')? VALUES '(' listaValue ')';
+
+update : UPDATE ID SET listaIDValue (WHERE expression)?;
+
+deleteFrom : DELETE FROM ID (WHERE expression)?;
+
+select : SELECT ('*' | listaID) FROM tabla (WHERE expression)?;
+tabla : select | listaID;
+
+/** EXPRESSIONS **/
+
+expression : literal                                #literalExpr
+// Arithmetic
+           | '(' expression ')'                     #parenthesisExpr
+           | RESTA expression                       #negExpr
+           | expression (MULT|DIV|MOD) expression   #multdivExpr
+           | expression (SUMA|RESTA) expression     #addsubExpr
+// Logic
+           | NOT expression                         #notExpr
+           | expression REL_OP expression           #relExpr
+           | expression EQ_OP expression            #eqExpr
+           | expression AND expression              #andExpr
+           | expression OR expression               #orExpr
+           ;
+
+literal : int_literal | string_literal | real_literal ;
+int_literal : NUMBER;
+string_literal : STRING;
+real_literal : REAL;

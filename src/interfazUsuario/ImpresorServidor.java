@@ -22,7 +22,7 @@ public class ImpresorServidor implements Impresor, Closeable{
      * Registra el impresor de mensajes.
      */
     public ImpresorServidor( BufferedWriter salida ) {
-        idImpresor = ImpresorMensajes.registrarImpresor(this);
+        idImpresor = MessagePrinter.registerPrinter(this);
         this.salida = salida;
     }
 
@@ -32,7 +32,7 @@ public class ImpresorServidor implements Impresor, Closeable{
      */
     @Override
     public void close() throws IOException {
-        ImpresorMensajes.eliminarImpresor(idImpresor);
+        MessagePrinter.eliminarImpresor(idImpresor);
     }
     
     

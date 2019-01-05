@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import interfazUsuario.ImpresorMensajes;
+import interfazUsuario.MessagePrinter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -97,7 +97,7 @@ public class Configuracion {
             FileUtils.writeStringToFile(new File(nombreArchivo), datosJson);
             
         } catch (IOException iOException) {
-            ImpresorMensajes.imprimirMensajeError( "Error guardar configuración: " + iOException.getMessage() );
+            MessagePrinter.imprimirMensajeError( "Error guardar configuración: " + iOException.getMessage() );
             return false;
         }
         return true;
