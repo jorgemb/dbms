@@ -1,4 +1,4 @@
-package interfazUsuario;
+package userInterface;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -14,14 +14,14 @@ import motor.relacion.Relation;
  * Permite imprimir los mensajes de salida de queries a la consola.
  * @author Jorge
  */
-public class ImpresorServidor implements Printer, Closeable{
+public class ServerPrinter implements Printer, Closeable{
     private int idImpresor;
     private BufferedWriter salida;
     
     /**
      * Registra el impresor de mensajes.
      */
-    public ImpresorServidor( BufferedWriter salida ) {
+    public ServerPrinter( BufferedWriter salida ) {
         idImpresor = MessagePrinter.registerPrinter(this);
         this.salida = salida;
     }
@@ -115,7 +115,7 @@ public class ImpresorServidor implements Printer, Closeable{
                 
                 // Imprime la fila
                 ArrayList<Object> datos = new ArrayList<>();
-                for (Data dato : fila.obtenerDatos()) {
+                for (Data dato : fila.getData()) {
                     datos.add(dato.getValue());
                 }
                 salida.append( gson.toJson(datos) );

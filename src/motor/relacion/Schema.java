@@ -115,7 +115,7 @@ public class Schema implements java.io.Serializable {
      * @param tiposAgregar Tipos a agregar al final del esquema.
      * @return Nuevo esquema con los tipos dados.
      */
-    public static Schema agregarTipo( Schema esquema, DataType ... tiposAgregar ){
+    public static Schema addType( Schema esquema, DataType ... tiposAgregar ){
         // Obtiene todos los tipos referenciados 
         Schema esquemaTemporal = new Schema(tiposAgregar);
         return combinarEsquemas( esquema, esquemaTemporal );
@@ -127,7 +127,7 @@ public class Schema implements java.io.Serializable {
      * @param indicesTiposEliminar Indices de los tipos a eliminar.
      * @return Nuevo esquema con los tipos eliminados.
      */
-    public static Schema eliminarTipos( Schema esquema, Integer ... indicesTiposEliminar ){
+    public static Schema deleteType( Schema esquema, Integer ... indicesTiposEliminar ){
         ArrayList<Integer> listaIndicesEliminar = new ArrayList<>( Arrays.asList(indicesTiposEliminar) );
         ArrayList<DataType> tiposEsquema = new ArrayList<>(Arrays.asList(esquema.getTypes()));
         

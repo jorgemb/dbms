@@ -1,28 +1,28 @@
-package excepciones;
+package exceptions;
 
 /**
  *
  * @author Jorge
  */
 public class TableException extends DBMSException {
-    public enum TipoError{
+    public enum ErrorType{
         DatoInvalido,
-        EsquemaInvalido,
+        InvalidSchema,
         EsquemaNoCoincide,
-        TablaNoExiste,
-        TablaYaExiste,
+        TableDoesNotExist,
+        TableAlreadyExists,
         TablaNoEsValida,
-        ColumnaYaExiste,
+        ColumnAlreadyExists,
         ColumnDoesNotExist,
-        RestriccionYaExiste,
+        RestrictionAlreadyExists,
         RestriccionNoExiste,
         FalloRestriccion,
         RestriccionErrorEnParametros,
-        ErrorReferencia,
+        ReferenceError,
         ErrorFatal
     }
     
-    private TipoError tipoError;
+    private ErrorType tipoError;
     private String detallesError;
     
     
@@ -33,7 +33,7 @@ public class TableException extends DBMSException {
     public TableException(String detallesError) {
         super(detallesError);
         this.detallesError = detallesError;
-        this.tipoError = TipoError.ErrorFatal;
+        this.tipoError = ErrorType.ErrorFatal;
     }
 
     /**
@@ -41,7 +41,7 @@ public class TableException extends DBMSException {
      * @param tipoError
      * @param detallesError 
      */
-    public TableException(TipoError tipoError, String detallesError) {
+    public TableException(ErrorType tipoError, String detallesError) {
         super(detallesError);
         this.tipoError = tipoError;
         this.detallesError = detallesError;
@@ -50,7 +50,7 @@ public class TableException extends DBMSException {
     /**
      * @return Devuelve el tipo de error.
      */
-    public TipoError obtenerTipoError() {
+    public ErrorType obtenerTipoError() {
         return tipoError;
     }
 
@@ -61,17 +61,17 @@ public class TableException extends DBMSException {
     @Override
     public String getMessage() {
         switch (tipoError) {
-            case TablaYaExiste:
+            case TableAlreadyExists:
                 return String.format("Ya existe una tabla con nombre: %s", detallesError);
-            case TablaNoExiste:
+            case TableDoesNotExist:
                 return String.format("No existe la tabla con nombre: %s", detallesError);
             case TablaNoEsValida:
                 return String.format("La tabla %s no es válida.", detallesError);
-            case ColumnaYaExiste:
+            case ColumnAlreadyExists:
                 return String.format("Ya existe una columna con nombre: %s", detallesError);
             case ColumnDoesNotExist:
                 return String.format("No existe la columna con nombre: %s", detallesError);
-            case RestriccionYaExiste:
+            case RestrictionAlreadyExists:
                 return String.format("Ya existe una restricción con nombre: %s", detallesError);
             case RestriccionNoExiste:
                 return String.format("No existe la restricción con nombre: %s", detallesError);

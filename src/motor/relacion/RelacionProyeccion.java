@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import motor.Data;
@@ -36,7 +36,7 @@ public class RelacionProyeccion extends Relation{
             if( indice != -1 )
                 indicesProyeccion.add(indice);
             else
-                throw new TableException(TableException.TipoError.ColumnDoesNotExist, nombreSeleccionar);
+                throw new TableException(TableException.ErrorType.ColumnDoesNotExist, nombreSeleccionar);
         }
     }
     
@@ -60,8 +60,8 @@ public class RelacionProyeccion extends Relation{
      * @return Cantidad de filas.
      */
     @Override
-    public int obtenerCantidadFilas() {
-        return relacionContenida.obtenerCantidadFilas();
+    public int getRowNumber() {
+        return relacionContenida.getRowNumber();
     }
 
     /**
@@ -105,7 +105,7 @@ public class RelacionProyeccion extends Relation{
         @Override
         public Row next() {
             Row filaCompleta = iteradorRelacion.next();
-            Data[] datosFila = filaCompleta.obtenerDatos();
+            Data[] datosFila = filaCompleta.getData();
             
             // Proyecta la fila
             Data[] datosProyectados = new Data[indicesProyeccion.size()];

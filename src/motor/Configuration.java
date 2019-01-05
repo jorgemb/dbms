@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import interfazUsuario.MessagePrinter;
+import userInterface.MessagePrinter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,21 +23,21 @@ import org.apache.commons.io.FileUtils;
  * Guarda la configuración inicial de todo el proyecto.
  * @author Jorge
  */
-public class Configuracion {
+public class Configuration {
     // Llaves para obtener datos globales.
-    public static final String DIRECTORIO_BASEDATOS = "DIRECTORIO_BASE_DATOS";
+    public static final String DIRECTORY_DATABASE = "DIRECTORIO_BASE_DATOS";
     
     /**
      * Instancia del singleton.
      */
-    private static Configuracion singleton;
+    private static Configuration singleton;
     private static final String nombreArchivo = "Config.ini";
     
     /**
      * Constructor estático.
      */
     static{
-        singleton = new Configuracion();
+        singleton = new Configuration();
         
         
         // Lee los datos del archivo de configuración
@@ -58,7 +58,7 @@ public class Configuracion {
             
             /* DIRECTORIO BASE DATOS */
             File directorioBaseDatos = new File(directorioTrabajo, "DatosDBMS");
-            singleton.datos.put(DIRECTORIO_BASEDATOS, directorioBaseDatos.getAbsolutePath());
+            singleton.datos.put(DIRECTORY_DATABASE, directorioBaseDatos.getAbsolutePath());
             singleton.guardarCambios();
         }
     }
@@ -79,7 +79,7 @@ public class Configuracion {
      * @param llave Llave a consultar.
      * @return String con el dato, o null si existe la llave.
      */
-    public static String obtenerDato( String llave ){
+    public static String getDatum( String llave ){
         if( singleton.datos.containsKey(llave) )
             return singleton.datos.get(llave);
         else
@@ -114,7 +114,7 @@ public class Configuracion {
     /**
      * Constructor marcado privado para mantener el singleton.
      */
-    private Configuracion() {
+    private Configuration() {
         this.datos = new HashMap<>();
     }
     

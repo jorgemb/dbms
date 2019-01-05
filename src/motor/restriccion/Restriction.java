@@ -4,7 +4,7 @@ package motor.restriccion;
  *
  * @author Jorge
  */
-public abstract class Restriccion implements java.io.Serializable{
+public abstract class Restriction implements java.io.Serializable{
 //    /**
 //     * Evalúa la restricción en la(s) tabla(s) necesarias.
 //     * @param relaciones Relaciones sobre las que se evaluarán las restricciones.
@@ -18,5 +18,5 @@ public abstract class Restriccion implements java.io.Serializable{
      * los nombres calificados para que se adecúen a la nueva tabla.
      * @param nuevoNombre Nuevo nombre de la tabla.
      */
-    public abstract void cambiarNombreTabla( String nuevoNombre );
+    public abstract void changeTableName( String nuevoNombre );
 }

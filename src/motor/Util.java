@@ -1,51 +1,58 @@
 package motor;
 
-import excepciones.DBMSException;
+import exceptions.DBMSException;
 
 /**
+ * Utility functions.
  *
  * @author Jorge
  */
 public class Util {
-    /**
-     * Devuelve el nombre de la tabla a partir de una nombre calificado.
-     * @param nombreCalificado Nombre calificado
-     * @return Nombre de la tabla.
-     * @throws DBMSException
-     */
-    public static String getTableName( String nombreCalificado ) throws DBMSException{
-        int indicePunto = nombreCalificado.indexOf(".");
-        
-        // Verifica que sea un nombre calificado
-        if( indicePunto == -1 )
-            throw new DBMSException( "No se tiene un nombre calificado." );
-        
-        return nombreCalificado.substring(0, indicePunto);
-    }
-    
-    /**
-     * Devuelve el nombre dle campo a partir de un nombre calificado.
-     * @param nombreCalificado Nombre calificado
-     * @return Nombre del campo
-     * @throws DBMSException 
-     */
-    public static String getFieldName( String nombreCalificado ) throws DBMSException{
-        int indicePunto = nombreCalificado.indexOf(".");
-        
-        // Verifica que sea un nombre calificado
-        if( indicePunto == -1 )
-            throw new DBMSException( "No se tiene un nombre calificado." );
-        
-        return nombreCalificado.substring(indicePunto+1);
-    }
-    
-    /**
-     * Devuelve el nombre calificado a partir del nombre de la tabla y el campo.
-     * @param nombreTabla
-     * @param nombreCampo
-     * @return 
-     */
-    public static String obtenerNombreCalificado( String nombreTabla, String nombreCampo ){
-        return String.format("%s.%s", nombreTabla, nombreCampo);
-    }
+
+	/**
+	 * Returns the name of a table from the qualified name.
+	 *
+	 * @param qualifiedName Qualified name
+	 * @return Table name
+	 * @throws DBMSException
+	 */
+	public static String getTableName(String qualifiedName) throws DBMSException {
+		int dotIndex = qualifiedName.indexOf(".");
+
+		// Verifies that is a qualified name
+		if (dotIndex == -1) {
+			throw new DBMSException("Qualified name not provided.");
+		}
+
+		return qualifiedName.substring(0, dotIndex);
+	}
+
+	/**
+	 * Returns the name of the field from the qualified name.
+	 *
+	 * @param qualifiedName Qualified name
+	 * @return Field name
+	 * @throws DBMSException
+	 */
+	public static String getFieldName(String qualifiedName) throws DBMSException {
+		int dotIndex = qualifiedName.indexOf(".");
+
+		// Verifies that its a qualified name.
+		if (dotIndex == -1) {
+			throw new DBMSException("Qualified name not provided.");
+		}
+
+		return qualifiedName.substring(dotIndex + 1);
+	}
+
+	/**
+	 * Returns the qualified name from the table name and the field.
+	 *
+	 * @param tableName
+	 * @param fieldName
+	 * @return
+	 */
+	public static String getCualifiedName(String tableName, String fieldName) {
+		return String.format("%s.%s", tableName, fieldName);
+	}
 }

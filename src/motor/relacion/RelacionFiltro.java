@@ -2,7 +2,7 @@ package motor.relacion;
 
 import condition.Condition;
 import condition.ConditionEvaluator;
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import motor.Data;
@@ -41,7 +41,7 @@ public class RelacionFiltro extends Relation{
      * @return Cantidad de filas.
      */
     @Override
-    public int obtenerCantidadFilas() {
+    public int getRowNumber() {
         int cantidad = 0;
         // Itera por cada fila de la relación
         for (Row filaActual : relacionContenida) {

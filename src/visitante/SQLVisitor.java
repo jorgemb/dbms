@@ -13,9 +13,9 @@ import condition.OperationNode;
 import condition.OperationNode.OperationType;
 import condition.RelationNode;
 import condition.RelationNode.RelationType;
-import excepciones.DatabaseException;
-import excepciones.DBMSException;
-import excepciones.TableException;
+import exceptions.DatabaseException;
+import exceptions.DBMSException;
+import exceptions.TableException;
 import grammar.SQLGrammarParser;
 import grammar.SQLGrammarParser.ExpressionContext;
 import grammar.SQLGrammarParser.IdValueContext;
@@ -24,7 +24,7 @@ import grammar.SQLGrammarParser.ActionContext;
 import grammar.SQLGrammarParser.ConstraintListContext;
 import grammar.SQLGrammarParser.ConstraintTypeContext;
 import grammar.SQLGrammarParser.OrderExpContext;
-import interfazUsuario.MessagePrinter;
+import userInterface.MessagePrinter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,10 +32,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import motor.BaseDatos;
+import motor.Database;
 import motor.Data;
-import motor.restriccion.Restriccion;
-import motor.Tabla;
+import motor.restriccion.Restriction;
+import motor.Table;
 import motor.DataType;
 import motor.relacion.Row;
 import motor.relacion.Relation;
@@ -45,8 +45,8 @@ import motor.relacion.RelacionOrdenamiento.TipoOrdenamiento;
 import motor.relacion.RelacionProductoCruz;
 import motor.relacion.RelacionProyeccion;
 import motor.restriccion.RestriccionChar;
-import motor.restriccion.RestriccionCheck;
-import motor.restriccion.RestriccionLlavePrimaria;
+import motor.restriccion.CheckRestriction;
+import motor.restriccion.PrimaryKeyRestriction;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import condition.Node;
 
@@ -57,9 +57,9 @@ import condition.Node;
 public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
     
     // Contiene la Base de Datos que se encuentra en uso
-    private BaseDatos baseDatosActual = null;
+    private Database baseDatosActual = null;
     // Contiene la última Tabla utilizada, para agregarle columnas y restricciones
-    private Tabla tablaActual;
+    private Table tablaActual;
     
     // Booleano para manejar echo
     private boolean echo = true;
@@ -96,7 +96,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         
         // Commit
         if( baseDatosActual != null )
-            baseDatosActual.guardarCambios();
+            baseDatosActual.saveChanges();
         return true;               
         
     }
@@ -109,7 +109,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitCreateDatabase(SQLGrammarParser.CreateDatabaseContext ctx){
         
-        BaseDatos.crear(ctx.ID().getText());
+        Database.create(ctx.ID().getText());
         MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s creada con éxito.", ctx.ID().getText()));
 
         return true;
@@ -125,7 +125,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
     public Object visitAlterDatabase(SQLGrammarParser.AlterDatabaseContext ctx){
         
         // Cambia el nombre de la base de datos
-        BaseDatos.renombrar(ctx.ID(0).getText(), ctx.ID(1).getText());
+        Database.renameDatabase(ctx.ID(0).getText(), ctx.ID(1).getText());
         MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s cambió de nombre a %s.", ctx.ID(0).getText(), ctx.ID(1).getText()));
 
         return true;
@@ -141,11 +141,11 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
     public Object visitDropDatabase(SQLGrammarParser.DropDatabaseContext ctx){
         
         // Encontrar la cantidad de registros en una base de datos
-        Tabla[] tablasTotales = BaseDatos.buscar(ctx.ID().getText()).obtenerTablas();
+        Table[] tablasTotales = Database.findDatabase(ctx.ID().getText()).getTables();
         int cantidadRegistros = 0;
         
         for (int i=0; i<tablasTotales.length; i++){
-            cantidadRegistros += tablasTotales[i].obtenerRelacion().obtenerCantidadFilas();
+            cantidadRegistros += tablasTotales[i].getRelation().getRowNumber();
         }
         
         
@@ -154,7 +154,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
 
         if (borrar){
             // Elimina la base de datos
-            BaseDatos.eliminar(ctx.ID().getText());
+            Database.deleteDatabase(ctx.ID().getText());
             MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s eliminada con éxito.", ctx.ID().getText()));
 
             return true;
@@ -176,7 +176,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         MessagePrinter.imprimirMensajeUsuario("Bases de datos: ");
         
         // Muestra todas las bases de datos
-        ArrayList<String> basesDatos = BaseDatos.mostrar();            
+        ArrayList<String> basesDatos = Database.getDatabaseNames();            
         for (String baseDatos : basesDatos) {
 
             MessagePrinter.imprimirMensajeUsuario(baseDatos);
@@ -196,7 +196,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
     public Object visitUseDatabase(SQLGrammarParser.UseDatabaseContext ctx){
         
         // Modificar el String que almancena el nombre de la base de datos actual
-        baseDatosActual = BaseDatos.buscar(ctx.ID().getText());
+        baseDatosActual = Database.findDatabase(ctx.ID().getText());
         MessagePrinter.imprimirMensajeUsuario(String.format("Base de datos %s ahora en uso.", ctx.ID().getText()));
 
         return true;
@@ -215,8 +215,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         if (baseDatosActual != null){
             
             // Crear la tabla en la base de datos
-            tablaActual = baseDatosActual.agregarTabla(ctx.ID(0).getText());
-            MessagePrinter.imprimirMensajeUsuario(String.format("Tabla %s creada en base de datos %s.", ctx.ID(0).getText(), baseDatosActual.obtenerNombre()));
+            tablaActual = baseDatosActual.addNewTable(ctx.ID(0).getText());
+            MessagePrinter.imprimirMensajeUsuario(String.format("Tabla %s creada en base de datos %s.", ctx.ID(0).getText(), baseDatosActual.getDatabaseName()));
             
             // Obtener arreglo de id y de tipo columna         
             List<TerminalNode> listaId = ctx.ID();
@@ -229,21 +229,21 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                 if (contador != 0){
                     String nombreColumna = id.getText();
                     DataType tipoColumna = (DataType)visit(ctx.columnType(contador-1));
-                    tablaActual.agregarColumna(nombreColumna, tipoColumna);
+                    tablaActual.addColumn(nombreColumna, tipoColumna);
                     
                     // Verifica si es necesario agregar una restriccion
                     if( tipoColumna == DataType.CHAR ){
                         int limiteChar = Integer.parseInt( ctx.columnType(contador-1).int_literal().NUM().getText() );
                         
                         /* NOTA: Utiliza UUID para asegurar que el nombre de la restricción sea único. */
-                        tablaActual.agregarRestriccion( UUID.randomUUID().toString() , 
+                        tablaActual.addRestriction( UUID.randomUUID().toString() , 
                                 new RestriccionChar(
-                                    motor.Util.obtenerNombreCalificado(tablaActual.obtenerNombre(), nombreColumna),
+                                    motor.Util.getCualifiedName(tablaActual.getTableName(), nombreColumna),
                                     limiteChar));
                     }
                     
                     if (echo){
-                        MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", id.getText(), tablaActual.obtenerNombre()));
+                        MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", id.getText(), tablaActual.getTableName()));
                     }
                     
                 }
@@ -306,15 +306,15 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
             
             for (String nc : campos){
                 
-                camposCalificados.add(tablaActual.obtenerNombre()+"."+nc);
+                camposCalificados.add(tablaActual.getTableName()+"."+nc);
                 
             }
             
-            Restriccion restriccionPrimaria = new RestriccionLlavePrimaria(camposCalificados.toArray(new String[0]));
+            Restriction restriccionPrimaria = new PrimaryKeyRestriction(camposCalificados.toArray(new String[0]));
             
             // Agregar restricción
-            tablaActual.agregarRestriccion(ctx.ID(0).getText(), restriccionPrimaria);
-            MessagePrinter.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.obtenerNombre()));
+            tablaActual.addRestriction(ctx.ID(0).getText(), restriccionPrimaria);
+            MessagePrinter.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.getTableName()));
             
             return true;
         } else if (ctx.FOREIGN() != null){
@@ -328,11 +328,11 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
             
             // Crear la restricción
             Condition condicionCheck = new Condition((Node)visit(ctx.expression()));
-            Restriccion restriccionCheck = new RestriccionCheck(condicionCheck);
+            Restriction restriccionCheck = new CheckRestriction(condicionCheck);
             
             // Agregar restricción
-            tablaActual.agregarRestriccion(ctx.ID(0).getText(), restriccionCheck);
-            MessagePrinter.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.obtenerNombre()));
+            tablaActual.addRestriction(ctx.ID(0).getText(), restriccionCheck);
+            MessagePrinter.imprimirMensajeUsuario(String.format("Restriccion %s agregada con éxito en tabla %s",ctx.ID(0).getText(), tablaActual.getTableName()));
             
             return true;
         }
@@ -373,8 +373,8 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         if (baseDatosActual != null){
             
             // Elminar la tabla de la base de datos
-            baseDatosActual.eliminarTabla(ctx.ID().getText());
-            MessagePrinter.imprimirMensajeUsuario(String.format("La tabla %s ha sido eliminada de la base de datos %s.", ctx.ID().getText(), baseDatosActual.obtenerNombre()));
+            baseDatosActual.deleteTable(ctx.ID().getText());
+            MessagePrinter.imprimirMensajeUsuario(String.format("La tabla %s ha sido eliminada de la base de datos %s.", ctx.ID().getText(), baseDatosActual.getDatabaseName()));
         } else{
             MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
@@ -394,13 +394,13 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
-            MessagePrinter.imprimirMensajeUsuario(String.format("Tablas de %s:", baseDatosActual.obtenerNombre()));
+            MessagePrinter.imprimirMensajeUsuario(String.format("Tablas de %s:", baseDatosActual.getDatabaseName()));
             
             // Mostrar las tablas de la base de datos
-            Tabla[] tablas = baseDatosActual.obtenerTablas();
+            Table[] tablas = baseDatosActual.getTables();
             for (int i = 0; i<tablas.length; i++){
                 
-                MessagePrinter.imprimirMensajeUsuario(tablas[i].obtenerNombre());
+                MessagePrinter.imprimirMensajeUsuario(tablas[i].getTableName());
                 
             }
         } else{
@@ -424,13 +424,13 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
-            Tabla[] tablas = baseDatosActual.obtenerTablas();
+            Table[] tablas = baseDatosActual.getTables();
             
             // Encontrar la tabla de la que de desean mostrar las columnas
             for (int i = 0; i<tablas.length; i++){
                 
                 // Encontrar la tabla de la que se desean visualizar las columnas
-                if (tablas[i].obtenerNombre().equals(ctx.ID().getText())){
+                if (tablas[i].getTableName().equals(ctx.ID().getText())){
                     tablaActual = tablas[i];
                 }
                 
@@ -441,10 +441,10 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                 return false;
             } else{
                 
-                MessagePrinter.imprimirMensajeUsuario(String.format("Columnas de la tabla %s:", tablaActual.obtenerNombre()));
+                MessagePrinter.imprimirMensajeUsuario(String.format("Columnas de la tabla %s:", tablaActual.getTableName()));
                 
                 // Mostrar todas las columnas
-                HashMap<String, DataType> columnas = tablaActual.obtenerColumnas();
+                HashMap<String, DataType> columnas = tablaActual.getColumns();
                 for (Map.Entry<String, DataType> columnaActual : columnas.entrySet()) {
                     MessagePrinter.imprimirMensajeUsuario(String.format("%s %s \n", columnaActual.getKey(), columnaActual.getValue()));
                 }
@@ -472,17 +472,17 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
             
             // Verifificar si es una acción la que se desea realizar
             if (ctx.ID(1) != null){
-                baseDatosActual.renombrarTabla(ctx.ID(0).getText(), ctx.ID(1).getText());
+                baseDatosActual.renameTable(ctx.ID(0).getText(), ctx.ID(1).getText());
                 MessagePrinter.imprimirMensajeUsuario(String.format("Tabla %s cambió de nombre a %S.", ctx.ID(0).getText(), ctx.ID(1).getText()));
             } else{
 
-                Tabla[] tablas = baseDatosActual.obtenerTablas();
+                Table[] tablas = baseDatosActual.getTables();
                 
                 // Encontrar la tabla que se desea modificar
                 for (int i = 0; i<tablas.length; i++){
 
                     // Encontrar la tabla de la que se desean visualizar las columnas
-                    if (tablas[i].obtenerNombre().equals(ctx.ID(0).getText())){
+                    if (tablas[i].getTableName().equals(ctx.ID(0).getText())){
                         tablaActual = tablas[i];
                     }
 
@@ -525,17 +525,17 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
             String nombreColumna = ctx.ID().getText();
             DataType tipoColumna = (DataType)visit(ctx.columnType());
             
-            tablaActual.agregarColumna(nombreColumna, tipoColumna);
-            MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", ctx.ID().getText(), tablaActual.obtenerNombre()));
+            tablaActual.addColumn(nombreColumna, tipoColumna);
+            MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", ctx.ID().getText(), tablaActual.getTableName()));
 
             // Verifica si es necesario agregar una restriccion
             if( tipoColumna == DataType.CHAR ){
                 int limiteChar = Integer.parseInt( ctx.columnType().int_literal().NUM().getText() );
 
                 /* NOTA: Utiliza UUID para asegurar que el nombre de la restricción sea único. */
-                tablaActual.agregarRestriccion( UUID.randomUUID().toString() , 
+                tablaActual.addRestriction( UUID.randomUUID().toString() , 
                     new RestriccionChar(
-                        motor.Util.obtenerNombreCalificado(tablaActual.obtenerNombre(), nombreColumna),
+                        motor.Util.getCualifiedName(tablaActual.getTableName(), nombreColumna),
                         limiteChar));
             }
             
@@ -553,15 +553,15 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         // Acción eliminar columna
         } else if(ctx.DROP() != null && ctx.COLUMN() != null){
 
-            tablaActual.eliminarColumna(ctx.ID().getText());
-            MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s eliminada de la tabla %s.", ctx.ID(), tablaActual.obtenerNombre()));
+            tablaActual.deleteColumn(ctx.ID().getText());
+            MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s eliminada de la tabla %s.", ctx.ID(), tablaActual.getTableName()));
             return true;
 
         // Acción eliminar restricción
         } else if(ctx.DROP() != null && ctx.CONSTRAINT() != null){
 
-            tablaActual.eliminarRestriccion(ctx.ID().getText());
-            MessagePrinter.imprimirMensajeUsuario(String.format("Restricción %s eliminada de la tabla %s.", ctx.ID(), tablaActual.obtenerNombre()));
+            tablaActual.deleteRestriction(ctx.ID().getText());
+            MessagePrinter.imprimirMensajeUsuario(String.format("Restricción %s eliminada de la tabla %s.", ctx.ID(), tablaActual.getTableName()));
             return true;
 
         }
@@ -583,13 +583,13 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
-            Tabla[] tablas = baseDatosActual.obtenerTablas();
+            Table[] tablas = baseDatosActual.getTables();
                 
             // Encontrar la tabla que se desea modificar
             for (int i = 0; i<tablas.length; i++){
 
                 // Encontrar la tabla de la que se desean visualizar las columnas
-                if (tablas[i].obtenerNombre().equals(ctx.ID().getText())){
+                if (tablas[i].getTableName().equals(ctx.ID().getText())){
                     tablaActual = tablas[i];
                 }
 
@@ -608,7 +608,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                 
                 // Valores que se van a insertar
                 ArrayList<Object> valores = (ArrayList<Object>)visit(ctx.valueList());
-                String[] nombreColumnas = tablaActual.obtenerNombreColumnas();
+                String[] nombreColumnas = tablaActual.getColumnNames();
                  
                 // Caso en el que se especifican columnas
                 if (ctx.idList()!= null){
@@ -625,7 +625,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                     for (String nombre : nombres){
                         if (!(nombreColumnasArreglo.contains(nombre))){
                             
-                            MessagePrinter.printErrorMessage(String.format("La columna %s no se encuentra en la tabla %S", nombre, tablaActual.obtenerNombre()));
+                            MessagePrinter.printErrorMessage(String.format("La columna %s no se encuentra en la tabla %S", nombre, tablaActual.getTableName()));
                             return false;
                             
                         }
@@ -657,7 +657,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                 
                 
                 //Construir la fila con los datos obtenidos y agregarla
-                tablaActual.agregarFila(new Row(datos.toArray(new Data[0])));
+                tablaActual.addRow(new Row(datos.toArray(new Data[0])));
                 if (echo){
                     MessagePrinter.imprimirMensajeUsuario(String.format("Insertados %s valores con éxito", datos.size()));
                 } else{
@@ -715,7 +715,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
             if (condicionPrueba.getUsedColumns().length == 0){
                 objetos.add(nodo.evaluate(null));
             } else{
-                throw new TableException(TableException.TipoError.ErrorFatal, "No es posible utilizar una referencia para insertar en una tabla");
+                throw new TableException(TableException.ErrorType.ErrorFatal, "No es posible utilizar una referencia para insertar en una tabla");
 //                ImpresorMensajes.imprimirMensajeError("No es posible utilizar una referencia para insertar en una tabla");
 //                return null;
             }
@@ -751,7 +751,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         if (ctx.ID(1) != null){
             nodoRetorno = new DataNode(ctx.ID(0).getText()+"."+ctx.ID(1));
         } else {
-            nodoRetorno = new DataNode(tablaActual.obtenerNombre()+"."+ctx.ID(0));
+            nodoRetorno = new DataNode(tablaActual.getTableName()+"."+ctx.ID(0));
         }
         
         return nodoRetorno;
@@ -1202,13 +1202,13 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
-            Tabla[] tablas = baseDatosActual.obtenerTablas();
+            Table[] tablas = baseDatosActual.getTables();
                 
             // Encontrar la tabla que se desea modificar
             for (int i = 0; i<tablas.length; i++){
 
                 // Encontrar la tabla de la que se desean visualizar las columnas
-                if (tablas[i].obtenerNombre().equals(ctx.ID().getText())){
+                if (tablas[i].getTableName().equals(ctx.ID().getText())){
                     tablaActual = tablas[i];
                 }
 
@@ -1228,7 +1228,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                 if (ctx.WHERE() != null){
                     
                     Condition condicion = new Condition((Node)visit(ctx.expression()));
-                    int cambios = tablaActual.actualizarFilas(mapa, condicion);
+                    int cambios = tablaActual.updateRows(mapa, condicion);
                     
                     // Imprime mensaje de cambios
                     MessagePrinter.imprimirMensajeUsuario(String.format("Se actualizaron %d filas.", cambios));
@@ -1239,7 +1239,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                     
                     LiteralNode nodoDummy = new LiteralNode("true", LiteralType.STRING);
                     Condition condicion = new TrueCondition(nodoDummy);
-                    int cambios = tablaActual.actualizarFilas(mapa, condicion);
+                    int cambios = tablaActual.updateRows(mapa, condicion);
                     
                     // Imprime mensaje de cambios
                     MessagePrinter.imprimirMensajeUsuario(String.format("Se actualizaron %d filas.", cambios));
@@ -1286,7 +1286,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         
         HashMap<String, Expression> mapa = new HashMap<>();
         Expression expresion = new Expression((Node)visit(ctx.expression()));
-        mapa.put(tablaActual.obtenerNombre()+"."+ctx.ID().getText(), expresion);
+        mapa.put(tablaActual.getTableName()+"."+ctx.ID().getText(), expresion);
         
         return mapa;
         
@@ -1305,13 +1305,13 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
             
-            Tabla[] tablas = baseDatosActual.obtenerTablas();
+            Table[] tablas = baseDatosActual.getTables();
                 
             // Encontrar la tabla que se desea modificar
             for (int i = 0; i<tablas.length; i++){
 
                 // Encontrar la tabla de la que se desean visualizar las columnas
-                if (tablas[i].obtenerNombre().equals(ctx.ID().getText())){
+                if (tablas[i].getTableName().equals(ctx.ID().getText())){
                     tablaActual = tablas[i];
                 }
 
@@ -1327,16 +1327,16 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                 if (ctx.WHERE() != null){
                     
                     Condition condicion = new Condition((Node)visit(ctx.expression()));
-                    int cantidadEliminado = tablaActual.eliminarFilas(condicion);
-                    MessagePrinter.imprimirMensajeUsuario(String.format("Se han eliminado de la tabla %s %d fila(s).",tablaActual.obtenerNombre(), cantidadEliminado));
+                    int cantidadEliminado = tablaActual.deleteRows(condicion);
+                    MessagePrinter.imprimirMensajeUsuario(String.format("Se han eliminado de la tabla %s %d fila(s).",tablaActual.getTableName(), cantidadEliminado));
                     return true;
                     
                 } else{
                     
                     LiteralNode nodoDummy = new LiteralNode("true", LiteralType.STRING);
                     Condition condicion = new TrueCondition(nodoDummy);
-                    tablaActual.eliminarFilas(condicion);
-                    MessagePrinter.imprimirMensajeUsuario(String.format("Se han elminado todas las filas de la tabla %s", tablaActual.obtenerNombre()));
+                    tablaActual.deleteRows(condicion);
+                    MessagePrinter.imprimirMensajeUsuario(String.format("Se han elminado todas las filas de la tabla %s", tablaActual.getTableName()));
                     return true;
                     
                 }
@@ -1380,7 +1380,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
             Relation relacionFrom = null;
             Relation relacionWhere = null;
             
-            Tabla[] tablasTotales = baseDatosActual.obtenerTablas();
+            Table[] tablasTotales = baseDatosActual.getTables();
              
             for (String tablaActualCiclo : tablas){
                 
@@ -1390,16 +1390,16 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
                 for (int i = 0; i<tablasTotales.length; i++){
 
                     // Encontrar la tabla de la que se desean visualizar las columnas
-                    if (tablasTotales[i].obtenerNombre().equals(tablaActualCiclo)){
-                        relacionTemporal = tablasTotales[i].obtenerRelacion();
+                    if (tablasTotales[i].getTableName().equals(tablaActualCiclo)){
+                        relacionTemporal = tablasTotales[i].getRelation();
                         tablaActual = tablasTotales[i];
-                        columnasTabla.add(tablasTotales[i].obtenerNombreColumnas());
+                        columnasTabla.add(tablasTotales[i].getColumnNames());
                     }
 
                 }
                 
                 if (relacionTemporal == null){
-                    throw new TableException(TableException.TipoError.TablaNoExiste, tablaActualCiclo);
+                    throw new TableException(TableException.ErrorType.TableDoesNotExist, tablaActualCiclo);
 //                    ImpresorMensajes.imprimirMensajeError(String.format("No existe la tabla %s.", tablaActualCiclo));
 //                    return null;
                 } else{

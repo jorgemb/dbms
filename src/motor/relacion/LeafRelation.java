@@ -1,24 +1,24 @@
 package motor.relacion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import motor.Tabla;
+import motor.Table;
 
 /**
  *
  * @author Jorge
  */
-public class RelacionTerminal extends Relation implements java.io.Serializable {
+public class LeafRelation extends Relation implements java.io.Serializable {
     private ArrayList<Row> datosRelacion;
     private Schema esquemaRelacion;
-    private transient Tabla tablaAsociada;
+    private transient Table tablaAsociada;
 
     /**
      * Constructor con esquema.
      * @param esquemaRelacion 
      */
-    public RelacionTerminal(Schema esquemaRelacion) {
+    public LeafRelation(Schema esquemaRelacion) {
         this.esquemaRelacion = esquemaRelacion;
         this.datosRelacion = new ArrayList<>();
     }
@@ -29,10 +29,10 @@ public class RelacionTerminal extends Relation implements java.io.Serializable {
      * @param filaAgregar Fila a agregar.
      * @return True si la operación fue satisfactoria.
      */
-    public void agregarFila( Row filaAgregar ) throws TableException{
+    public void addRow( Row filaAgregar ) throws TableException{
         // Verifica el esquema de la fila
         if( getSchema().getSize() != filaAgregar.obtenerEsquema().getSize() ){
-            throw new TableException(TableException.TipoError.EsquemaNoCoincide,
+            throw new TableException(TableException.ErrorType.EsquemaNoCoincide,
             String.format("No se puede agregar la fila con esquema %s a la relación con esquema %s.",
             filaAgregar.obtenerEsquema(), getSchema()));
         }
@@ -69,7 +69,7 @@ public class RelacionTerminal extends Relation implements java.io.Serializable {
      * @return 
      */
     @Override
-    public int obtenerCantidadFilas() {
+    public int getRowNumber() {
         return this.datosRelacion.size();
     }
 
@@ -82,11 +82,11 @@ public class RelacionTerminal extends Relation implements java.io.Serializable {
     public String getQualifiedName(int indiceColumna) throws TableException{
         // Verifica el índice
         if( indiceColumna < 0 || indiceColumna >= this.esquemaRelacion.getSize() )
-            throw new TableException(TableException.TipoError.ColumnDoesNotExist, "IDX" + indiceColumna);
+            throw new TableException(TableException.ErrorType.ColumnDoesNotExist, "IDX" + indiceColumna);
         
         // Obtiene el nombre calificado
-        String nombreColumna = tablaAsociada.obtenerNombre() + ".";
-        nombreColumna += tablaAsociada.obtenerNombreColumnas()[indiceColumna];
+        String nombreColumna = tablaAsociada.getTableName() + ".";
+        nombreColumna += tablaAsociada.getColumnNames()[indiceColumna];
         
         return nombreColumna;
     }
@@ -95,7 +95,7 @@ public class RelacionTerminal extends Relation implements java.io.Serializable {
      * Asocia una tabla a la relacion.
      * @param tablaAsociada Tabla asociada a la relación.
      */
-    public void asociarTabla( Tabla tablaAsociada ){
+    public void associateTable( Table tablaAsociada ){
         this.tablaAsociada = tablaAsociada;
     }
 }

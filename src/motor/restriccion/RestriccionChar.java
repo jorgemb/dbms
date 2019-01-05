@@ -1,6 +1,6 @@
 package motor.restriccion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import motor.Data;
 import motor.DataType;
@@ -11,7 +11,7 @@ import motor.relacion.Relation;
  *
  * @author Jorge
  */
-public class RestriccionChar extends Restriccion{
+public class RestriccionChar extends Restriction{
     private String nombreCampo;
     private int cantidadCaracteres;
 
@@ -30,14 +30,14 @@ public class RestriccionChar extends Restriccion{
      * @param relacion Relación de donde salen los campos.
      * @param filaVerificar Fila a verificar. 
      */
-    public void evaluarRestriccion( Relation relacion, Row filaVerificar ) throws TableException{
+    public void evaluateRestriction( Relation relacion, Row filaVerificar ) throws TableException{
         // Obtiene el esquema y los indices
         ArrayList<String> nombreColumnas = relacion.obtenerTodosNombreCalificados();
         
         // Obtiene el índice de la columna referenciada
         int indiceColumna = nombreColumnas.indexOf( nombreCampo );
         if( indiceColumna == -1 )
-            throw new TableException(TableException.TipoError.ColumnDoesNotExist, nombreCampo);
+            throw new TableException(TableException.ErrorType.ColumnDoesNotExist, nombreCampo);
         
         
         Data datoVerificar = filaVerificar.getDatum(indiceColumna);
@@ -47,7 +47,7 @@ public class RestriccionChar extends Restriccion{
         
         String strDato = (String)datoVerificar.getValue();
         if( strDato.length() > cantidadCaracteres )
-            throw new TableException(TableException.TipoError.FalloRestriccion, 
+            throw new TableException(TableException.ErrorType.FalloRestriccion, 
                     String.format( "No se puede asignar un string de tamaño %d a un dato de tipo CHAR(%d).",
                     strDato.length(), cantidadCaracteres) );
     }
@@ -56,9 +56,9 @@ public class RestriccionChar extends Restriccion{
      * Evalúa la restricción en una relación completa.
      * @param relacion Relación a evaluar.
      */
-    public void evaluarRestriccion( Relation relacion ){
+    public void evaluateRestriction( Relation relacion ){
         for (Row filaActual : relacion) {
-            evaluarRestriccion( relacion, filaActual );
+            evaluateRestriction( relacion, filaActual );
         }
     }
     
@@ -66,7 +66,7 @@ public class RestriccionChar extends Restriccion{
     /**
      * @return Devuelve el nombre del campo referenciado.
      */
-    public String obtenerCampoReferenciado(){
+    public String getReferencedField(){
         return nombreCampo;
     }
     
@@ -75,9 +75,9 @@ public class RestriccionChar extends Restriccion{
      * @param nuevoNombre 
      */
     @Override
-    public void cambiarNombreTabla(String nuevoNombre) {
+    public void changeTableName(String nuevoNombre) {
         String campo = motor.Util.getFieldName(nombreCampo);
-        nombreCampo = motor.Util.obtenerNombreCalificado(nuevoNombre, campo);
+        nombreCampo = motor.Util.getCualifiedName(nuevoNombre, campo);
     }
     
 }

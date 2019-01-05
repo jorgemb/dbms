@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -37,8 +37,8 @@ public class RelacionProductoCruz extends Relation{
      * @return Cantidad de filas de la relación.
      */
     @Override
-    public int obtenerCantidadFilas() {
-        return relacionIzq.obtenerCantidadFilas() * relacionDer.obtenerCantidadFilas();
+    public int getRowNumber() {
+        return relacionIzq.getRowNumber() * relacionDer.getRowNumber();
     }
 
     /**
@@ -80,7 +80,7 @@ public class RelacionProductoCruz extends Relation{
             this.iterDerecho = relacionDer.iterator();
             
             if( iterIzquierdo.hasNext() )
-                filaIzquierdaActual = new ArrayList<>( Arrays.asList( iterIzquierdo.next().obtenerDatos() ) );
+                filaIzquierdaActual = new ArrayList<>( Arrays.asList( iterIzquierdo.next().getData() ) );
         }
         
         /**
@@ -88,7 +88,7 @@ public class RelacionProductoCruz extends Relation{
          */
         @Override
         public boolean hasNext() {
-            if( relacionIzq.obtenerCantidadFilas() * relacionDer.obtenerCantidadFilas() == 0 )
+            if( relacionIzq.getRowNumber() * relacionDer.getRowNumber() == 0 )
                 return false;
             
             return (iterIzquierdo.hasNext() || iterDerecho.hasNext());
@@ -102,10 +102,10 @@ public class RelacionProductoCruz extends Relation{
             // Crea la nueva fila
             if( iterDerecho.hasNext() ){
                 ArrayList<Data> datosFila = new ArrayList<>( filaIzquierdaActual );
-                datosFila.addAll( Arrays.asList( iterDerecho.next().obtenerDatos() ) );
+                datosFila.addAll( Arrays.asList( iterDerecho.next().getData() ) );
                 return new Row( datosFila.toArray(new Data[0] ) );
             } else if( iterIzquierdo.hasNext() ){
-                filaIzquierdaActual = new ArrayList<>( Arrays.asList( iterIzquierdo.next().obtenerDatos() ) );
+                filaIzquierdaActual = new ArrayList<>( Arrays.asList( iterIzquierdo.next().getData() ) );
                 iterDerecho = relacionDer.iterator();
                 return this.next();
             } else {

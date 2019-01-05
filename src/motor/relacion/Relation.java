@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 
 /**
@@ -17,7 +17,7 @@ public abstract class Relation implements Iterable<Row>{
     /**
      * @return Devuelve la cantidad de filas.
      */
-    public abstract int obtenerCantidadFilas();
+    public abstract int getRowNumber();
     
     /**
      * Devuelve el nombre calificado de la columna con el índice dado.

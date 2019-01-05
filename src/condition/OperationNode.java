@@ -1,7 +1,7 @@
 
 package condition;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.HashMap;
 import java.util.Set;
 import motor.Data;
@@ -94,7 +94,7 @@ public class OperationNode implements Node, java.io.Serializable{
         
 	// Check for null
         if( left == null || right == null )
-            throw new TableException( TableException.TipoError.DatoInvalido, 
+            throw new TableException( TableException.ErrorType.DatoInvalido, 
                     "NULL values cannot be operated." );
         
 	// Both integer

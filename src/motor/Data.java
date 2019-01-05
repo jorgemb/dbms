@@ -1,6 +1,6 @@
 package motor;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -87,7 +87,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
                     return DataType.CHAR;
                 }
             } catch (ParseException ex) {
-                throw new TableException(TableException.TipoError.DatoInvalido,
+                throw new TableException(TableException.ErrorType.DatoInvalido,
                         String.format("La fecha %s no posee un formato válido (%s).", 
                         valor, ex.getMessage()) );
             }
@@ -128,7 +128,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
      * @param tipo Tipo de dato.
      * @return 
      */
-    public static Data obtenerValorPorDefecto( DataType tipo ){
+    public static Data getDefaultValue( DataType tipo ){
         switch (tipo) {
             case INT:
                 return new Data( new Integer(0), INT );
@@ -152,12 +152,12 @@ public class Data implements java.io.Serializable, Comparable<Data>{
      */
     public static Date getDate( Data dato ){
         if( dato.obtenerTipo() != DataType.DATE )
-            throw new TableException(TableException.TipoError.DatoInvalido, "No se puede convertir el dato a fecha.");
+            throw new TableException(TableException.ErrorType.DatoInvalido, "No se puede convertir el dato a fecha.");
         try {
             Date d = formatoFecha.parse((String)dato.valor);
             return d;
         } catch (ParseException ex) {
-            throw new TableException(TableException.TipoError.DatoInvalido, "No se puede convertir el dato a fecha.");
+            throw new TableException(TableException.ErrorType.DatoInvalido, "No se puede convertir el dato a fecha.");
         }
     }
 
@@ -211,7 +211,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
         }
         
         if( tipoIzq != tipoDer )
-            throw new TableException(TableException.TipoError.DatoInvalido, 
+            throw new TableException(TableException.ErrorType.DatoInvalido, 
                     String.format("No se pueden comparar datos con tipo %s y %s.", tipoIzq.name(), tipoDer.name()));
         
         switch (tipoIzq) {
@@ -227,7 +227,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
                     Date der = formatoFecha.parse((String)t.valor);
                     return izq.compareTo(der);
                 } catch (ParseException ex) {
-                    throw new TableException(TableException.TipoError.DatoInvalido, "No se puede parsear la fecha: " + ex.getMessage());
+                    throw new TableException(TableException.ErrorType.DatoInvalido, "No se puede parsear la fecha: " + ex.getMessage());
                 }  
             }
             default:
@@ -253,7 +253,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
         
         // Verifica si el actual es NULL
         if( this.obtenerTipo() == NULL )
-            throw new TableException(TableException.TipoError.DatoInvalido, 
+            throw new TableException(TableException.ErrorType.DatoInvalido, 
                     "No se puede convertir el dato de NULL a " + tipoConvertir.name());
         
         // Verifica si la conversion es a char
@@ -269,12 +269,12 @@ public class Data implements java.io.Serializable, Comparable<Data>{
                     case FLOAT:
                         return new Data(Float.parseFloat((String) this.valor));
                     default:
-                        throw new TableException(TableException.TipoError.DatoInvalido, 
+                        throw new TableException(TableException.ErrorType.DatoInvalido, 
                                 "No se puede convertur el dato de CHAR a " + tipoConvertir.name() );
                 }
             }
         } catch (TableException | NumberFormatException ex) {
-            throw new TableException( TableException.TipoError.DatoInvalido, 
+            throw new TableException( TableException.ErrorType.DatoInvalido, 
                     String.format("No se puede convertir el dato de CHAR a %s. (%s)", tipoConvertir.name(), ex.getMessage()));
         }
         
@@ -289,7 +289,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
         }
         
         // CONVERSIÓN NO SOPORTADA
-        throw new TableException(TableException.TipoError.DatoInvalido,
+        throw new TableException(TableException.ErrorType.DatoInvalido,
                 String.format("No se puede convertir el dato de %s a %s.", 
                 this.obtenerTipo().name(), tipoConvertir.name()));
     }

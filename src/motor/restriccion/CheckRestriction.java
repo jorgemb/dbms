@@ -1,7 +1,7 @@
 package motor.restriccion;
 
 import condition.Condition;
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,7 +13,7 @@ import motor.relacion.Relation;
  *
  * @author Jorge
  */
-public class RestriccionCheck extends Restriccion{
+public class CheckRestriction extends Restriction{
     /** Condicion a aplicar a cada fila */
     private Condition condicionAplicar;
     private transient String[] camposCondicion;
@@ -22,7 +22,7 @@ public class RestriccionCheck extends Restriccion{
      * Obtiene la restricción a aplicar.
      * @param condicionAplicar 
      */
-    public RestriccionCheck(Condition condicionAplicar) {
+    public CheckRestriction(Condition condicionAplicar) {
         this.condicionAplicar = condicionAplicar;
     }
     
@@ -30,7 +30,7 @@ public class RestriccionCheck extends Restriccion{
      * Devuelve los campos referenciados.
      * @return 
      */
-    public ArrayList<String> obtenerCamposReferenciados(){
+    public ArrayList<String> getReferencedFields(){
         return new ArrayList<>(Arrays.asList(condicionAplicar.getUsedColumns()));
     }
     
@@ -38,7 +38,7 @@ public class RestriccionCheck extends Restriccion{
      * Evalua la restricción en una fila dada.
      * @param filaEvaluar 
      */
-    public void evaluarRestriccion( Relation relacion, Row filaEvaluar ){
+    public void evaluateRestriction( Relation relacion, Row filaEvaluar ){
         // Obtiene los campos de la condicion
         if( camposCondicion == null )
             camposCondicion = condicionAplicar.getUsedColumns();
@@ -54,16 +54,16 @@ public class RestriccionCheck extends Restriccion{
         }
         
         if( !condicionAplicar.evaluate(mapaDatos) )
-            throw new TableException(TableException.TipoError.FalloRestriccion, "No se cumple la restricción CHECK " + condicionAplicar.toString());
+            throw new TableException(TableException.ErrorType.FalloRestriccion, "No se cumple la restricción CHECK " + condicionAplicar.toString());
     }
     
     /**
      * Evalua una restriccion con todas las filas de una relación.
      * @param relacion 
      */
-    public void evaluarRestriccion( Relation relacion ) throws TableException{
+    public void evaluateRestriction( Relation relacion ) throws TableException{
         for (Row filaActual : relacion) {
-            evaluarRestriccion(relacion, filaActual);
+            evaluateRestriction(relacion, filaActual);
         }
     }
 
@@ -72,7 +72,7 @@ public class RestriccionCheck extends Restriccion{
      * @param nuevoNombre Nuevo nombre de la tabla.
      */
     @Override
-    public void cambiarNombreTabla(String nuevoNombre) {
+    public void changeTableName(String nuevoNombre) {
         condicionAplicar.changeTableName(null, nuevoNombre);
     }
 }

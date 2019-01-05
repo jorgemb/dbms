@@ -1,7 +1,7 @@
 
-package interfazUsuario;
+package userInterface;
 
-import excepciones.DBMSException;
+import exceptions.DBMSException;
 import java.util.Collections;
 import java.util.List;
 import org.antlr.v4.runtime.BaseErrorListener;

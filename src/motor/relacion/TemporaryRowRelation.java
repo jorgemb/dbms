@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -9,8 +9,8 @@ import java.util.NoSuchElementException;
  * ingresada.
  * @author Jorge
  */
-public class RelacionTemporalFila extends Relation{
-    RelacionTerminal relacionContenida;
+public class TemporaryRowRelation extends Relation{
+    LeafRelation relacionContenida;
     Row filaExtra;
 
     /**
@@ -18,7 +18,7 @@ public class RelacionTemporalFila extends Relation{
      * @param relacionContenida Relación base.
      * @param filaExtra Fila extra a utilizar.
      */
-    public RelacionTemporalFila(RelacionTerminal relacionContenida, Row filaExtra) {
+    public TemporaryRowRelation(LeafRelation relacionContenida, Row filaExtra) {
         this.relacionContenida = relacionContenida;
         this.filaExtra = filaExtra;
     }
@@ -37,8 +37,8 @@ public class RelacionTemporalFila extends Relation{
      * @return 
      */
     @Override
-    public int obtenerCantidadFilas() {
-        return relacionContenida.obtenerCantidadFilas() + 1;
+    public int getRowNumber() {
+        return relacionContenida.getRowNumber() + 1;
     }
 
     /**

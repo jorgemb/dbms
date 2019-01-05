@@ -1,6 +1,6 @@
 package condition;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import motor.Data;
@@ -37,7 +37,7 @@ public class ConditionEvaluator {
         for (int i = 0; i < usedColumns.length; i++) {
             int schemaIndex = columnNames.indexOf( usedColumns[i] );
             if( schemaIndex == -1 )
-                throw new TableException(TableException.TipoError.ColumnDoesNotExist, usedColumns[i] );
+                throw new TableException(TableException.ErrorType.ColumnDoesNotExist, usedColumns[i] );
             
             usedIndices.add(schemaIndex);
             dataMap.put(columnNames.get(schemaIndex), null);

@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -40,7 +40,7 @@ public class Row implements java.io.Serializable, Iterable<Data>{
         DataType[] esquema = new DataType[this.datos.length];
         for (int i = 0; i != datos.length; i++) {
             if( (esquema[i] = datos[i].obtenerTipo()) == null )
-                throw new TableException(TableException.TipoError.EsquemaInvalido,
+                throw new TableException(TableException.ErrorType.InvalidSchema,
                         String.format( "La fila posee un dato no soportado (%s).",
                         datos[i].getValue().getClass() ) );
         }
@@ -61,7 +61,7 @@ public class Row implements java.io.Serializable, Iterable<Data>{
     /**
      * @return Devuelve un arreglo con los datos.
      */
-    public Data[] obtenerDatos(){
+    public Data[] getData(){
         return datos;
     }
     
@@ -124,11 +124,11 @@ public class Row implements java.io.Serializable, Iterable<Data>{
      */
     public static Row cambiarEsquema(Schema esquema, Row fila){
         DataType[] listaTipos = esquema.getTypes();
-        Data[] listaDatos = fila.obtenerDatos();
+        Data[] listaDatos = fila.getData();
         
         // Verifica
         if( listaTipos.length != listaDatos.length )
-            throw new TableException(TableException.TipoError.EsquemaNoCoincide, 
+            throw new TableException(TableException.ErrorType.EsquemaNoCoincide, 
                     "No se puede realizar cast a un esquema de distinto tamaño.");
         
         // Crea los datos
@@ -149,8 +149,8 @@ public class Row implements java.io.Serializable, Iterable<Data>{
      * @return Nueva fila
      */
     public static Row combinarFilas( Row a, Row b ){
-        ArrayList<Data> datosFilas = new ArrayList<>(Arrays.asList(a.obtenerDatos()));
-        datosFilas.addAll(Arrays.asList(b.obtenerDatos()));
+        ArrayList<Data> datosFilas = new ArrayList<>(Arrays.asList(a.getData()));
+        datosFilas.addAll(Arrays.asList(b.getData()));
         
         return new Row( datosFilas.toArray(new Data[0] ) );
     }
@@ -161,7 +161,7 @@ public class Row implements java.io.Serializable, Iterable<Data>{
      * @param datosAgregar Datos a agregar.
      * @return Nueva fila
      */
-    public static Row agregarDatos( Row fila, Data ... datosAgregar ){
+    public static Row addData( Row fila, Data ... datosAgregar ){
         Row filaTemporal = new Row(datosAgregar);
         
         return combinarFilas( fila, filaTemporal );
@@ -174,9 +174,9 @@ public class Row implements java.io.Serializable, Iterable<Data>{
      * @param indicesEliminar Posiciones a eliminar.
      * @return Nueva fila
      */
-    public static Row eliminarDatos( Row fila, Integer ... indicesEliminar ){
+    public static Row deleteData( Row fila, Integer ... indicesEliminar ){
         ArrayList<Integer> listaIndices = new ArrayList<>( Arrays.asList(indicesEliminar) );
-        ArrayList<Data> datosFila = new ArrayList<>( Arrays.asList(fila.obtenerDatos()) );
+        ArrayList<Data> datosFila = new ArrayList<>( Arrays.asList(fila.getData()) );
         
         Iterator<Data> iterador = datosFila.iterator();
         int indiceActual = 0;

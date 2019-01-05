@@ -1,4 +1,4 @@
-package interfazUsuario;
+package userInterface;
 
 import motor.relacion.Relation;
 

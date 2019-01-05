@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.TableException;
+import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -40,8 +40,8 @@ public class RelacionOrdenamiento extends Relation{
      * @return Devuelve la cantidad de filas.
      */
     @Override
-    public int obtenerCantidadFilas() {
-        return this.relacionContenida.obtenerCantidadFilas();
+    public int getRowNumber() {
+        return this.relacionContenida.getRowNumber();
     }
 
     /**

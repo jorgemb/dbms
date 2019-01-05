@@ -1,5 +1,5 @@
 
-package interfazUsuario;
+package userInterface;
 
 import java.util.HashMap;
 import motor.relacion.Row;

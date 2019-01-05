@@ -1,14 +1,14 @@
 package GUI;
 
 
-import excepciones.DatabaseException;
-import excepciones.DBMSException;
-import excepciones.TableException;
+import exceptions.DatabaseException;
+import exceptions.DBMSException;
+import exceptions.TableException;
 import grammar.SQLGrammarLexer;
 import grammar.SQLGrammarParser;
 import grammar.SQLGrammarVisitor;
-import interfazUsuario.MessagePrinter;
-import interfazUsuario.VerboseListener;
+import userInterface.MessagePrinter;
+import userInterface.VerboseListener;
 import java.awt.BorderLayout;
 import java.awt.GridBagLayout;
 import java.awt.HeadlessException;
@@ -35,7 +35,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import visitante.SQLVisitor;
-import interfazUsuario.Printer;
+import userInterface.Printer;
 
 /**
  * Basic GUI for interacting with the DBMS.

@@ -2,7 +2,7 @@ package dbms;
 
 
 import GUI.GUI;
-import conection.Server;
+import connection.Server;
 import java.awt.EventQueue;
 
 
