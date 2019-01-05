@@ -1,3 +1,9 @@
+DROP DATABASE test;
+CREATE DATABASE test;
+USE DATABASE test;
+
+CREATE TABLE factura (id INT, nombre CHAR (100), nit CHAR(12), total FLOAT, comprado_en DATE);
+
 INSERT INTO factura (id,nombre,nit,total,comprado_en) VALUES (1,'May Whitney','BJ46SQ',57.22,'17-02-2014');
 INSERT INTO factura (id,nombre,nit,total,comprado_en) VALUES (2,'Howard Patterson','VY94UW',55.21,'27-10-2011');
 INSERT INTO factura (id,nombre,nit,total,comprado_en) VALUES (3,'Edward Erickson','FJ10MW',49.85,'06-08-2012');

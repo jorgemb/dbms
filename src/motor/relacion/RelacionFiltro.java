@@ -1,38 +1,38 @@
 package motor.relacion;
 
-import condicion.Condicion;
-import condicion.EvaluadorCondicion;
-import excepciones.ExcepcionTabla;
+import condition.Condition;
+import condition.ConditionEvaluator;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import motor.Dato;
+import motor.Data;
 
 /**
  * Representa una relación donde se aplica un filtro (WHERE).
  * @author Jorge
  */
-public class RelacionFiltro extends Relacion{
-    private Relacion relacionContenida;
-    private Condicion filtro;
-    private EvaluadorCondicion evaluador;
+public class RelacionFiltro extends Relation{
+    private Relation relacionContenida;
+    private Condition filtro;
+    private ConditionEvaluator evaluador;
 
     /**
      * Constructor para la relación.
      * @param relacionContenida
      * @param filtro 
      */
-    public RelacionFiltro(Relacion relacionContenida, Condicion filtro) {
+    public RelacionFiltro(Relation relacionContenida, Condition filtro) {
         this.relacionContenida = relacionContenida;
         this.filtro = filtro;
-        this.evaluador = new EvaluadorCondicion(filtro, relacionContenida);
+        this.evaluador = new ConditionEvaluator(filtro, relacionContenida);
     }
 
     /**
      * @return Devuelve el esquema de la relación.
      */
     @Override
-    public Esquema obtenerEsquema() {
-        return relacionContenida.obtenerEsquema();
+    public Schema getSchema() {
+        return relacionContenida.getSchema();
     }
 
     /**
@@ -44,8 +44,8 @@ public class RelacionFiltro extends Relacion{
     public int obtenerCantidadFilas() {
         int cantidad = 0;
         // Itera por cada fila de la relación
-        for (Fila filaActual : relacionContenida) {
-            if( evaluador.evaluarFila(filaActual) )
+        for (Row filaActual : relacionContenida) {
+            if( evaluador.evaluateRow(filaActual) )
                 ++cantidad;
         }
         
@@ -56,15 +56,15 @@ public class RelacionFiltro extends Relacion{
      * Devuelve el nombre calificado de la columna dada.
      * @param indiceColumna Indice de la columna.
      * @return Nombre calificado de la columna.
-     * @throws ExcepcionTabla 
+     * @throws TableException 
      */
     @Override
-    public String obtenerNombreCalificado(int indiceColumna) throws ExcepcionTabla {
-        return relacionContenida.obtenerNombreCalificado(indiceColumna);
+    public String getQualifiedName(int indiceColumna) throws TableException {
+        return relacionContenida.getQualifiedName(indiceColumna);
     }
 
     @Override
-    public Iterator<Fila> iterator() {
+    public Iterator<Row> iterator() {
         // Materializa la relacion
 //        ArrayList<Fila> filasRelacion = new ArrayList<>();
 //        
@@ -84,9 +84,9 @@ public class RelacionFiltro extends Relacion{
     /**
      * Clase para iterar por la relación de filtro.
      */
-    public class Iterador implements Iterator<Fila>{
-        private Fila filaSiguiente;
-        private Iterator<Fila> iteradorRelacion;
+    public class Iterador implements Iterator<Row>{
+        private Row filaSiguiente;
+        private Iterator<Row> iteradorRelacion;
 
         /**
          * Constructor.
@@ -101,8 +101,8 @@ public class RelacionFiltro extends Relacion{
          */
         private void buscarSiguiente(){
             while( iteradorRelacion.hasNext() ){
-                Fila filaActual = iteradorRelacion.next();
-                if( evaluador.evaluarFila(filaActual) ){
+                Row filaActual = iteradorRelacion.next();
+                if( evaluador.evaluateRow(filaActual) ){
                     filaSiguiente = filaActual;
                     return;
                 }
@@ -116,8 +116,8 @@ public class RelacionFiltro extends Relacion{
         }
 
         @Override
-        public Fila next() {
-            Fila retorno = filaSiguiente;
+        public Row next() {
+            Row retorno = filaSiguiente;
             buscarSiguiente();
             
             return retorno;

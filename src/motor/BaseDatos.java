@@ -1,15 +1,15 @@
 package motor;
 
-import condicion.Condicion;
-import condicion.Expresion;
-import condicion.NodoCondicional;
-import condicion.NodoDato;
-import condicion.NodoLiteral;
-import condicion.NodoLiteral.TipoLiteral;
-import condicion.NodoOperacional;
-import condicion.NodoRelacional;
-import excepciones.ExcepcionBaseDatos;
-import excepciones.ExcepcionTabla;
+import condition.Condition;
+import condition.Expression;
+import condition.ConditionalNode;
+import condition.DataNode;
+import condition.LiteralNode;
+import condition.LiteralNode.LiteralType;
+import condition.OperationNode;
+import condition.RelationNode;
+import excepciones.DatabaseException;
+import excepciones.TableException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,8 +17,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 import motor.relacion.RelacionFiltro;
 import motor.relacion.RelacionOrdenamiento;
 import motor.relacion.RelacionProductoCruz;
@@ -55,10 +55,10 @@ public class BaseDatos {
      * válido.
      * @param nombre Nombre de la base de datos.
      * @return Base de datos
-     * @throws ExcepcionBaseDatos
-     * @throws ExcepcionTabla 
+     * @throws DatabaseException
+     * @throws TableException 
      */
-    public static BaseDatos crear( String nombre ) throws ExcepcionBaseDatos, ExcepcionTabla{
+    public static BaseDatos crear( String nombre ) throws DatabaseException, TableException{
         // Verificar estado inicial
         verificarEstadoInicial();
         
@@ -68,10 +68,10 @@ public class BaseDatos {
             
             // Puesto que la base de datos se encontró, significa que ya existe
             // una con ese nombre.
-            throw new ExcepcionBaseDatos(ExcepcionBaseDatos.TipoError.NombreYaExiste, nombre);
+            throw new DatabaseException(DatabaseException.TipoError.NombreYaExiste, nombre);
             
-        } catch (ExcepcionBaseDatos excepcionBaseDatos) {
-            if( excepcionBaseDatos.obtenerTipoError() != ExcepcionBaseDatos.TipoError.NoExiste )
+        } catch (DatabaseException excepcionBaseDatos) {
+            if( excepcionBaseDatos.obtenerTipoError() != DatabaseException.TipoError.NoExiste )
                 throw excepcionBaseDatos;
         }
         
@@ -79,7 +79,7 @@ public class BaseDatos {
         // Se crea la nueva base de datos
         File directorioBD = new File( directorioRaiz, nombre );
         if( !directorioBD.mkdir() )
-            throw new ExcepcionBaseDatos( "No se pudo crear el directorio para la base de datos " + nombre );
+            throw new DatabaseException( "No se pudo crear el directorio para la base de datos " + nombre );
         
         return new BaseDatos(nombre, directorioBD);
     }
@@ -87,10 +87,10 @@ public class BaseDatos {
     /**
      * Obtiene una base de datos con el nombre dado.
      * @param nombre Nombre de la base de datos a utilizar.
-     * @throws ExcepcionBaseDatos 
-     * @throws ExcepcionTabla
+     * @throws DatabaseException 
+     * @throws TableException
      */
-    public static BaseDatos buscar( String nombre ) throws ExcepcionBaseDatos, ExcepcionTabla{
+    public static BaseDatos buscar( String nombre ) throws DatabaseException, TableException{
         // Verificar estado inicial
         verificarEstadoInicial();
         
@@ -113,7 +113,7 @@ public class BaseDatos {
         
         // Verifica si se encontró
         if( directorioBuscado == null )
-            throw new ExcepcionBaseDatos(ExcepcionBaseDatos.TipoError.NoExiste, nombre);
+            throw new DatabaseException(DatabaseException.TipoError.NoExiste, nombre);
         
         // Crear la instancia de la base de datos
         BaseDatos bd = new BaseDatos(nombre, directorioBuscado);
@@ -127,9 +127,9 @@ public class BaseDatos {
      * a la base de datos que se elimina dicha instancia queda invalidada
      * después de esta llamada.
      * @param nombre Nombre de la base de datos a generar.
-     * @throws ExcepcionBaseDatos 
+     * @throws DatabaseException 
      */
-    public static void eliminar( String nombre ) throws ExcepcionBaseDatos, ExcepcionTabla{
+    public static void eliminar( String nombre ) throws DatabaseException, TableException{
         // Verifica el estado inicial
         verificarEstadoInicial();
         
@@ -141,7 +141,7 @@ public class BaseDatos {
         try {
             FileUtils.deleteDirectory(directorio);
         } catch (IOException ex) {
-            throw new ExcepcionBaseDatos( String.format("No se pudo eliminar la base de datos: %s [%s]", 
+            throw new DatabaseException( String.format("No se pudo eliminar la base de datos: %s [%s]", 
                     nombre, ex.getMessage()) );
         }
     }
@@ -150,7 +150,7 @@ public class BaseDatos {
      * Obtiene el nombre de las bases de datos.
      * @return Arreglo con los nombres.
      */
-    public static ArrayList<String> mostrar() throws ExcepcionBaseDatos{
+    public static ArrayList<String> mostrar() throws DatabaseException{
         // Verifica estado inicial
         verificarEstadoInicial();
         
@@ -173,25 +173,25 @@ public class BaseDatos {
      * después de esta llamada.
      * @param nombreActual Nombre de la base de datos que se renombrará.
      * @param nombreNuevo Nombre con el cual se renombrará la base de datos.
-     * @throws ExcepcionBaseDatos 
+     * @throws DatabaseException 
      */
-    public static void renombrar( String nombreActual, String nombreNuevo ) throws ExcepcionBaseDatos{
+    public static void renombrar( String nombreActual, String nombreNuevo ) throws DatabaseException{
         // Verifica el estado inicial
         verificarEstadoInicial();
         
         // Busca la base de datos
         ArrayList<String> bdActuales = mostrar();
         if( !bdActuales.contains(nombreActual) )
-            throw new ExcepcionBaseDatos(ExcepcionBaseDatos.TipoError.NoExiste, nombreActual);
+            throw new DatabaseException(DatabaseException.TipoError.NoExiste, nombreActual);
         
         if( bdActuales.contains(nombreNuevo) )
-            throw new ExcepcionBaseDatos(ExcepcionBaseDatos.TipoError.NombreYaExiste, nombreNuevo);
+            throw new DatabaseException(DatabaseException.TipoError.NombreYaExiste, nombreNuevo);
         
         // Renombra la base de datos
         File antiguo = new File(directorioRaiz, nombreActual);
         File nuevo = new File(directorioRaiz, nombreNuevo);
         if( !antiguo.renameTo(nuevo) ){
-            throw new ExcepcionBaseDatos(String.format("No se pudo renombrar la base de datos %s a %s.", 
+            throw new DatabaseException(String.format("No se pudo renombrar la base de datos %s a %s.", 
                     nombreActual, nombreNuevo) );
         }
     }
@@ -203,15 +203,15 @@ public class BaseDatos {
      * Cambia el nombre de una tabla.
      * @param nombreTabla Nombre de la tabla.
      * @param nuevoNombre Nuevo nombre de la tabla.
-     * @throws ExcepcionBaseDatos
-     * @throws ExcepcionTabla 
+     * @throws DatabaseException
+     * @throws TableException 
      */
-    public void renombrarTabla( String nombreTabla, String nuevoNombre ) throws ExcepcionBaseDatos, ExcepcionTabla{
+    public void renombrarTabla( String nombreTabla, String nuevoNombre ) throws DatabaseException, TableException{
         // Verifica que la tabla a renombrar exista y que no exista una tabla con el nuevo nombre.
         if( !this.tablas.containsKey(nombreTabla) )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.TablaNoExiste, nombreTabla);
+            throw new TableException(TableException.TipoError.TablaNoExiste, nombreTabla);
         if( this.tablas.containsKey(nuevoNombre) )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.TablaYaExiste, nuevoNombre);
+            throw new TableException(TableException.TipoError.TablaYaExiste, nuevoNombre);
         
         // Cambia el nombre de la tabla
         if( tablas.get(nombreTabla).existeEnArchivo() )
@@ -229,13 +229,13 @@ public class BaseDatos {
     /**
      * Elimina la tabla con el nombre dado.
      * @param nombreTabla Nombre de la tabla a eliminar.
-     * @throws ExcepcionBaseDatos
-     * @throws ExcepcionTabla 
+     * @throws DatabaseException
+     * @throws TableException 
      */
-    public void eliminarTabla( String nombreTabla ) throws ExcepcionBaseDatos, ExcepcionTabla{
+    public void eliminarTabla( String nombreTabla ) throws DatabaseException, TableException{
         // Verifica que la tabla exista
         if( !this.tablas.containsKey(nombreTabla) )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.TablaNoExiste, nombreTabla);
+            throw new TableException(TableException.TipoError.TablaNoExiste, nombreTabla);
         
         // Verifica si se puede eliminar la tabla físicamente
         if( tablas.get(nombreTabla).existeEnArchivo() )
@@ -265,10 +265,10 @@ public class BaseDatos {
      * @param nombreTabla Nombre de la tabla.
      * @return Tabla
      */
-    public Tabla obtenerTabla( String nombreTabla ) throws ExcepcionTabla{
+    public Tabla obtenerTabla( String nombreTabla ) throws TableException{
         // Verifica que exista
         if( !this.tablas.containsKey(nombreTabla) )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.TablaNoExiste, nombreTabla );
+            throw new TableException(TableException.TipoError.TablaNoExiste, nombreTabla );
         
         return this.tablas.get(nombreTabla);
     }
@@ -278,13 +278,13 @@ public class BaseDatos {
      * @param nombreTabla
      * @return Tabla recien creada.
      */
-    public Tabla agregarTabla( String nombreTabla ) throws ExcepcionTabla, ExcepcionBaseDatos{
+    public Tabla agregarTabla( String nombreTabla ) throws TableException, DatabaseException{
         // Verifica estado inicial
         verificarEstadoInicial();
         
         // Verifica que no exista la tabla
         if( this.tablas.containsKey(nombreTabla) )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.TablaYaExiste, nombreTabla);
+            throw new TableException(TableException.TipoError.TablaYaExiste, nombreTabla);
         
         
         // Crea la nueva tabla y la agrega al listado de tablas
@@ -297,10 +297,10 @@ public class BaseDatos {
     /**
      * Guarda todos los cambios realizados en la base de datos, incluidas 
      * todas las tablas.
-     * @throws ExcepcionBaseDatos
-     * @throws ExcepcionTabla 
+     * @throws DatabaseException
+     * @throws TableException 
      */
-    public void guardarCambios() throws ExcepcionBaseDatos, ExcepcionTabla{
+    public void guardarCambios() throws DatabaseException, TableException{
         for (Map.Entry<String, Tabla> parTabla : tablas.entrySet()) {
             parTabla.getValue().guardarCambios();
         }
@@ -309,7 +309,7 @@ public class BaseDatos {
     /**
      * Elimina la instanciación.
      */
-    private BaseDatos( String nombre, File directorioBase ) throws ExcepcionTabla{
+    private BaseDatos( String nombre, File directorioBase ) throws TableException{
         this.nombreBD = nombre;
         this.directorioBase = directorioBase;
         this.tablas = new HashMap<>();
@@ -325,7 +325,7 @@ public class BaseDatos {
     /**
      * Verifica el estado inicial de los directorios de la base de datos.
      */
-    private static void verificarEstadoInicial() throws ExcepcionBaseDatos{
+    private static void verificarEstadoInicial() throws DatabaseException{
         if( directorioRaiz != null )
             return;
         
@@ -334,10 +334,10 @@ public class BaseDatos {
         // Crea el directorio raiz
         if( !directorioRaiz.exists() ){
             if( !directorioRaiz.mkdir() )
-                throw new ExcepcionBaseDatos( "No se pudo crear el directorio raíz para el gestor de bases de datos.");
+                throw new DatabaseException( "No se pudo crear el directorio raíz para el gestor de bases de datos.");
         } else {
             if( !directorioRaiz.isDirectory() )
-                throw new ExcepcionBaseDatos( "No se pudo crear el directorio raíz para el gestor de bases de datos.");
+                throw new DatabaseException( "No se pudo crear el directorio raíz para el gestor de bases de datos.");
         }
     }
     
@@ -345,28 +345,28 @@ public class BaseDatos {
     
     
     
-    public static void main( String[] args ) throws ExcepcionBaseDatos, ExcepcionTabla{
+    public static void main( String[] args ) throws DatabaseException, TableException{
 //        BaseDatos bd = crear("BDPruebas");
         BaseDatos bd = buscar("BDPruebas");
         
-        NodoOperacional A_0 = new NodoOperacional(NodoOperacional.TipoOperacionOperacional.Modulo, 
-                new NodoDato("TablaA.A-2"), new NodoLiteral(2, NodoLiteral.TipoLiteral.INT));
-        NodoRelacional A_1 = new NodoRelacional(NodoRelacional.TipoOperacionRelacional.Diferente, 
-                A_0, new NodoLiteral(1, NodoLiteral.TipoLiteral.INT) );
-        Condicion condCheck = new Condicion(A_1);
+        OperationNode A_0 = new OperationNode(OperationNode.OperationType.Modulo, 
+                new DataNode("TablaA.A-2"), new LiteralNode(2, LiteralNode.LiteralType.INT));
+        RelationNode A_1 = new RelationNode(RelationNode.RelationType.Inequal, 
+                A_0, new LiteralNode(1, LiteralNode.LiteralType.INT) );
+        Condition condCheck = new Condition(A_1);
         
         Tabla A = bd.agregarTabla("TablaA");
-        A.agregarColumna("A-1", TipoDato.INT);
-        A.agregarColumna("A-2", TipoDato.INT);
-        A.agregarColumna("A-3", TipoDato.INT);
-        A.agregarColumna("A-4", TipoDato.CHAR);
+        A.agregarColumna("A-1", DataType.INT);
+        A.agregarColumna("A-2", DataType.INT);
+        A.agregarColumna("A-3", DataType.INT);
+        A.agregarColumna("A-4", DataType.CHAR);
         
         A.agregarRestriccion("PK_Llave", new RestriccionLlavePrimaria("TablaA.A-1"));
         A.agregarRestriccion("CH_pares", new RestriccionCheck(condCheck));
         A.agregarRestriccion("STR_1", new RestriccionChar("TablaA.A-4", 10));
         
         for (int i = 0; i < 1000; i++) {
-            A.agregarFila( new Fila( new Dato(Integer.toString(i)), new Dato(2*i), new Dato(i*i), new Dato("" + i + "+" + 2*i)) );
+            A.agregarFila(new Row( new Data(Integer.toString(i)), new Data(2*i), new Data(i*i), new Data("" + i + "+" + 2*i)) );
         }
         
 //        Tabla A = bd.obtenerTabla("TablaA");
@@ -374,25 +374,25 @@ public class BaseDatos {
         
         
         Tabla B = bd.agregarTabla("TablaB");
-        B.agregarColumna("B-1", TipoDato.FLOAT);
-        B.agregarColumna("B-2", TipoDato.FLOAT);
-        B.agregarColumna("B-3", TipoDato.DATE);
+        B.agregarColumna("B-1", DataType.FLOAT);
+        B.agregarColumna("B-2", DataType.FLOAT);
+        B.agregarColumna("B-3", DataType.DATE);
         for (int i = 0; i < 500; i++) {
-            B.agregarFila( new Fila(new Dato(i*3.14f), new Dato(null), new Dato( "1-1-2014" ) ) );
+            B.agregarFila(new Row(new Data(i*3.14f), new Data(null), new Data( "1-1-2014" ) ) );
         }
 //        Tabla B = bd.obtenerTabla("TablaB");
         
-        NodoRelacional nodoA = new NodoRelacional(NodoRelacional.TipoOperacionRelacional.Menor, 
-                new NodoDato("TablaA.A-1"), new NodoLiteral(5, TipoLiteral.INT));
-        NodoRelacional nodoB = new NodoRelacional(NodoRelacional.TipoOperacionRelacional.Igual,
-                new NodoLiteral("3+6",TipoLiteral.STRING), new NodoDato("TablaA.A-4"));
-        NodoCondicional nodoC = new NodoCondicional(NodoCondicional.TipoOperacionCondicional.AND, nodoA, nodoB);
-        Condicion condicion = new Condicion(nodoC);
-        System.out.println("Condicion: " + Arrays.toString( condicion.obtenerColumnasUtilizadas()));
+        RelationNode nodoA = new RelationNode(RelationNode.RelationType.Less, 
+                new DataNode("TablaA.A-1"), new LiteralNode(5, LiteralType.INT));
+        RelationNode nodoB = new RelationNode(RelationNode.RelationType.Equal,
+                new LiteralNode("3+6",LiteralType.STRING), new DataNode("TablaA.A-4"));
+        ConditionalNode nodoC = new ConditionalNode(ConditionalNode.ConditionalOperationType.AND, nodoA, nodoB);
+        Condition condicion = new Condition(nodoC);
+        System.out.println("Condicion: " + Arrays.toString( condicion.getUsedColumns()));
         
 //        A.eliminarFilas(new Condicion(nodoA));
         
-        Relacion rel = new RelacionProductoCruz(A.obtenerRelacion(), B.obtenerRelacion());
+        Relation rel = new RelacionProductoCruz(A.obtenerRelacion(), B.obtenerRelacion());
         rel = new RelacionProyeccion( rel, "TablaA.A-1", "TablaB.B-1", "TablaA.A-3", "TablaA.A-4", "TablaB.B-3", "TablaB.B-2" );
         rel = new RelacionFiltro(rel, condicion);
         
@@ -401,24 +401,24 @@ public class BaseDatos {
         camposOrdenar.put("TablaB.B-3", RelacionOrdenamiento.TipoOrdenamiento.ASCENDENTE);
         rel = new RelacionOrdenamiento(rel, camposOrdenar);
         
-        System.out.println( rel.obtenerEsquema() );
-        for (int i = 0; i < rel.obtenerEsquema().obtenerTamaño(); i++) {
-            System.out.println( i + ":" + rel.obtenerNombreCalificado(i) );
+        System.out.println( rel.getSchema() );
+        for (int i = 0; i < rel.getSchema().getSize(); i++) {
+            System.out.println( i + ":" + rel.getQualifiedName(i) );
         }
         
-        NodoRelacional updateA = new NodoRelacional( NodoRelacional.TipoOperacionRelacional.Igual,
-                new NodoDato("TablaB.B-3"), new NodoLiteral("1-1-2014", TipoLiteral.STRING) );
-        NodoRelacional updateB = new NodoRelacional( NodoRelacional.TipoOperacionRelacional.Menor,
-                new NodoDato("TablaB.B-1"), new NodoLiteral( 100.0f, TipoLiteral.FLOAT) );
-        NodoCondicional updateC = new NodoCondicional(NodoCondicional.TipoOperacionCondicional.AND, updateA, updateB);
-        NodoLiteral updateCambio = new NodoLiteral("1-1-2012", TipoLiteral.STRING);
+        RelationNode updateA = new RelationNode( RelationNode.RelationType.Equal,
+                new DataNode("TablaB.B-3"), new LiteralNode("1-1-2014", LiteralType.STRING) );
+        RelationNode updateB = new RelationNode( RelationNode.RelationType.Less,
+                new DataNode("TablaB.B-1"), new LiteralNode( 100.0f, LiteralType.FLOAT) );
+        ConditionalNode updateC = new ConditionalNode(ConditionalNode.ConditionalOperationType.AND, updateA, updateB);
+        LiteralNode updateCambio = new LiteralNode("1-1-2012", LiteralType.STRING);
         
-        HashMap<String, Expresion> cambios = new HashMap<>();
-        cambios.put("TablaB.B-3", new Expresion(updateCambio));
-        B.actualizarFilas(cambios, new Condicion(updateC) );
+        HashMap<String, Expression> cambios = new HashMap<>();
+        cambios.put("TablaB.B-3", new Expression(updateCambio));
+        B.actualizarFilas(cambios, new Condition(updateC) );
         
         int cantidad = 0; 
-        for (Fila filaActual : rel) {
+        for (Row filaActual : rel) {
 //            System.out.println( filaActual );
             ++cantidad;
         }
@@ -432,7 +432,7 @@ public class BaseDatos {
         }
         
         int cantidad2 = 0;
-        for (Fila fila : A.obtenerRelacion()) {
+        for (Row fila : A.obtenerRelacion()) {
 //            System.out.println(fila);
             ++cantidad2;
         }

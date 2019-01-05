@@ -4,12 +4,12 @@ package excepciones;
  *
  * @author Jorge
  */
-public class ExcepcionDBMS extends RuntimeException {
+public class DBMSException extends RuntimeException {
     /**
      * Constructor con mensaje de error.
      * @param string 
      */
-    public ExcepcionDBMS(String string) {
+    public DBMSException(String string) {
         super(string);
     }
 }

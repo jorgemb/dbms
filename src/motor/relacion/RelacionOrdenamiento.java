@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,10 +12,10 @@ import java.util.LinkedHashMap;
  *
  * @author Jorge
  */
-public class RelacionOrdenamiento extends Relacion{
+public class RelacionOrdenamiento extends Relation{
     public enum TipoOrdenamiento{ ASCENDENTE, DESCENDENTE };
     
-    private Relacion relacionContenida;
+    private Relation relacionContenida;
     private LinkedHashMap<String, TipoOrdenamiento> ordenamientos;
 
     /**
@@ -23,7 +23,7 @@ public class RelacionOrdenamiento extends Relacion{
      * @param relacionContenida Relación a ordenar.
      * @param ordenamientos Tipos y campos de ordenamiento
      */
-    public RelacionOrdenamiento(Relacion relacionContenida, LinkedHashMap<String, TipoOrdenamiento> ordenamientos) {
+    public RelacionOrdenamiento(Relation relacionContenida, LinkedHashMap<String, TipoOrdenamiento> ordenamientos) {
         this.relacionContenida = relacionContenida;
         this.ordenamientos = ordenamientos;
     }
@@ -32,8 +32,8 @@ public class RelacionOrdenamiento extends Relacion{
      * @return Devuelve el esquema de la relación.
      */
     @Override
-    public Esquema obtenerEsquema() {
-        return this.relacionContenida.obtenerEsquema();
+    public Schema getSchema() {
+        return this.relacionContenida.getSchema();
     }
 
     /**
@@ -48,18 +48,18 @@ public class RelacionOrdenamiento extends Relacion{
      * Devuelve el nombre calificado de un campo.
      * @param indiceColumna Indice de la columna
      * @return 
-     * @throws ExcepcionTabla 
+     * @throws TableException 
      */
     @Override
-    public String obtenerNombreCalificado(int indiceColumna) throws ExcepcionTabla {
-        return this.relacionContenida.obtenerNombreCalificado(indiceColumna);
+    public String getQualifiedName(int indiceColumna) throws TableException {
+        return this.relacionContenida.getQualifiedName(indiceColumna);
     }
 
     @Override
-    public Iterator<Fila> iterator() {
+    public Iterator<Row> iterator() {
         // Materializa la relación
-        ArrayList<Fila> relacion = new ArrayList<>();
-        for (Fila filaActual : relacionContenida) {
+        ArrayList<Row> relacion = new ArrayList<>();
+        for (Row filaActual : relacionContenida) {
             relacion.add(filaActual);
         }
         
@@ -72,7 +72,7 @@ public class RelacionOrdenamiento extends Relacion{
     /**
      * Permite realizar las comparaciones para ordenamiento.
      */
-    class Comparador implements Comparator<Fila>{
+    class Comparador implements Comparator<Row>{
         private HashMap<String, Integer> indicesColumnas;
 
         /**
@@ -82,8 +82,8 @@ public class RelacionOrdenamiento extends Relacion{
             indicesColumnas = new HashMap<>();
             
             // Obtiene el nombre de todas las columnas
-            for (int i = 0; i < obtenerEsquema().obtenerTamaño(); i++) {
-                indicesColumnas.put(obtenerNombreCalificado(i), i);
+            for (int i = 0; i < getSchema().getSize(); i++) {
+                indicesColumnas.put(getQualifiedName(i), i);
             }
         }
         
@@ -94,16 +94,16 @@ public class RelacionOrdenamiento extends Relacion{
          * @return 
          */
         @Override
-        public int compare(Fila izq, Fila der) {
+        public int compare(Row izq, Row der) {
             // Verifica con todas las columnas
             for (String campoActual : ordenamientos.keySet()) {
                 int indice = indicesColumnas.get(campoActual);
                 
                 int comparacion = 0;
                 if( ordenamientos.get(campoActual) == TipoOrdenamiento.ASCENDENTE ){
-                    comparacion = izq.obtenerDato(indice).compareTo(der.obtenerDato(indice));
+                    comparacion = izq.getDatum(indice).compareTo(der.getDatum(indice));
                 } else {
-                    comparacion = der.obtenerDato(indice).compareTo(izq.obtenerDato(indice));
+                    comparacion = der.getDatum(indice).compareTo(izq.getDatum(indice));
                 }
                 
                 if( comparacion != 0 )

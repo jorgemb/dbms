@@ -1,8 +1,8 @@
-package conexion;
+package conection;
 
-import excepciones.ExcepcionBaseDatos;
-import excepciones.ExcepcionDBMS;
-import excepciones.ExcepcionTabla;
+import excepciones.DatabaseException;
+import excepciones.DBMSException;
+import excepciones.TableException;
 import grammar.SQLGrammarLexer;
 import grammar.SQLGrammarParser;
 import grammar.SQLGrammarVisitor;
@@ -15,7 +15,7 @@ import java.util.Date;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import visitante.VisitanteSQL;
+import visitante.SQLVisitor;
 
 /**
  *
@@ -70,14 +70,14 @@ public class ManejadorCliente {
             ParseTree arbol = parser.program();
 
             // Visitar
-            SQLGrammarVisitor visitante = new VisitanteSQL();
+            SQLGrammarVisitor visitante = new SQLVisitor();
             visitante.visit(arbol);
-        } catch (ExcepcionBaseDatos excepcionBD){
-            MessagePrinter.imprimirMensajeError(excepcionBD.getMessage());
-        } catch (ExcepcionTabla excepcionTabla){
-            MessagePrinter.imprimirMensajeError(excepcionTabla.getMessage());
-        } catch( ExcepcionDBMS ex ){
-            MessagePrinter.imprimirMensajeError(ex.getMessage());
+        } catch (DatabaseException excepcionBD){
+            MessagePrinter.printErrorMessage(excepcionBD.getMessage());
+        } catch (TableException excepcionTabla){
+            MessagePrinter.printErrorMessage(excepcionTabla.getMessage());
+        } catch( DBMSException ex ){
+            MessagePrinter.printErrorMessage(ex.getMessage());
         }
     }
 }

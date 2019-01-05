@@ -97,7 +97,7 @@ public class Configuracion {
             FileUtils.writeStringToFile(new File(nombreArchivo), datosJson);
             
         } catch (IOException iOException) {
-            MessagePrinter.imprimirMensajeError( "Error guardar configuración: " + iOException.getMessage() );
+            MessagePrinter.printErrorMessage( "Error guardar configuración: " + iOException.getMessage() );
             return false;
         }
         return true;

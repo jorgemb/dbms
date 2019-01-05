@@ -1,6 +1,6 @@
 package motor;
 
-import excepciones.ExcepcionDBMS;
+import excepciones.DBMSException;
 
 /**
  *
@@ -11,14 +11,14 @@ public class Util {
      * Devuelve el nombre de la tabla a partir de una nombre calificado.
      * @param nombreCalificado Nombre calificado
      * @return Nombre de la tabla.
-     * @throws ExcepcionDBMS
+     * @throws DBMSException
      */
-    public static String obtenerNombreTabla( String nombreCalificado ) throws ExcepcionDBMS{
+    public static String getTableName( String nombreCalificado ) throws DBMSException{
         int indicePunto = nombreCalificado.indexOf(".");
         
         // Verifica que sea un nombre calificado
         if( indicePunto == -1 )
-            throw new ExcepcionDBMS( "No se tiene un nombre calificado." );
+            throw new DBMSException( "No se tiene un nombre calificado." );
         
         return nombreCalificado.substring(0, indicePunto);
     }
@@ -27,14 +27,14 @@ public class Util {
      * Devuelve el nombre dle campo a partir de un nombre calificado.
      * @param nombreCalificado Nombre calificado
      * @return Nombre del campo
-     * @throws ExcepcionDBMS 
+     * @throws DBMSException 
      */
-    public static String obtenerNombreCampo( String nombreCalificado ) throws ExcepcionDBMS{
+    public static String getFieldName( String nombreCalificado ) throws DBMSException{
         int indicePunto = nombreCalificado.indexOf(".");
         
         // Verifica que sea un nombre calificado
         if( indicePunto == -1 )
-            throw new ExcepcionDBMS( "No se tiene un nombre calificado." );
+            throw new DBMSException( "No se tiene un nombre calificado." );
         
         return nombreCalificado.substring(indicePunto+1);
     }

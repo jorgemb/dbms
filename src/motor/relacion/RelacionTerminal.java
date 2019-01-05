@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import motor.Tabla;
@@ -9,16 +9,16 @@ import motor.Tabla;
  *
  * @author Jorge
  */
-public class RelacionTerminal extends Relacion implements java.io.Serializable {
-    private ArrayList<Fila> datosRelacion;
-    private Esquema esquemaRelacion;
+public class RelacionTerminal extends Relation implements java.io.Serializable {
+    private ArrayList<Row> datosRelacion;
+    private Schema esquemaRelacion;
     private transient Tabla tablaAsociada;
 
     /**
      * Constructor con esquema.
      * @param esquemaRelacion 
      */
-    public RelacionTerminal(Esquema esquemaRelacion) {
+    public RelacionTerminal(Schema esquemaRelacion) {
         this.esquemaRelacion = esquemaRelacion;
         this.datosRelacion = new ArrayList<>();
     }
@@ -29,18 +29,18 @@ public class RelacionTerminal extends Relacion implements java.io.Serializable {
      * @param filaAgregar Fila a agregar.
      * @return True si la operación fue satisfactoria.
      */
-    public void agregarFila( Fila filaAgregar ) throws ExcepcionTabla{
+    public void agregarFila( Row filaAgregar ) throws TableException{
         // Verifica el esquema de la fila
-        if( obtenerEsquema().obtenerTamaño() != filaAgregar.obtenerEsquema().obtenerTamaño() ){
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.EsquemaNoCoincide,
+        if( getSchema().getSize() != filaAgregar.obtenerEsquema().getSize() ){
+            throw new TableException(TableException.TipoError.EsquemaNoCoincide,
             String.format("No se puede agregar la fila con esquema %s a la relación con esquema %s.",
-            filaAgregar.obtenerEsquema(), obtenerEsquema()));
+            filaAgregar.obtenerEsquema(), getSchema()));
         }
         
         // Trata de realizar la conversion
-        if( !obtenerEsquema().equals(filaAgregar.obtenerEsquema()) ){
+        if( !getSchema().equals(filaAgregar.obtenerEsquema()) ){
             // Trata de convertir la fila
-            filaAgregar = Fila.cambiarEsquema(obtenerEsquema(), filaAgregar);
+            filaAgregar = Row.cambiarEsquema(getSchema(), filaAgregar);
         }
         
         datosRelacion.add(filaAgregar);
@@ -51,7 +51,7 @@ public class RelacionTerminal extends Relacion implements java.io.Serializable {
      * @return Iterador para recorrer la lista de filas.
      */
     @Override
-    public Iterator<Fila> iterator() {
+    public Iterator<Row> iterator() {
         return datosRelacion.iterator();
     }
     
@@ -60,7 +60,7 @@ public class RelacionTerminal extends Relacion implements java.io.Serializable {
      * @return 
      */
     @Override
-    public Esquema obtenerEsquema() {
+    public Schema getSchema() {
         return this.esquemaRelacion;
     }
 
@@ -79,10 +79,10 @@ public class RelacionTerminal extends Relacion implements java.io.Serializable {
      * @return Nombre calificado
      */
     @Override
-    public String obtenerNombreCalificado(int indiceColumna) throws ExcepcionTabla{
+    public String getQualifiedName(int indiceColumna) throws TableException{
         // Verifica el índice
-        if( indiceColumna < 0 || indiceColumna >= this.esquemaRelacion.obtenerTamaño() )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.ColumnaNoExiste, "IDX" + indiceColumna);
+        if( indiceColumna < 0 || indiceColumna >= this.esquemaRelacion.getSize() )
+            throw new TableException(TableException.TipoError.ColumnDoesNotExist, "IDX" + indiceColumna);
         
         // Obtiene el nombre calificado
         String nombreColumna = tablaAsociada.obtenerNombre() + ".";

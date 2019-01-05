@@ -1,18 +1,18 @@
 package motor.relacion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
 
 /**
  *
  * @author Jorge
  */
-public abstract class Relacion implements Iterable<Fila>{
+public abstract class Relation implements Iterable<Row>{
 
     /**
      * @return Esquema de la relación.
      */
-    public abstract Esquema obtenerEsquema();
+    public abstract Schema getSchema();
     
     /**
      * @return Devuelve la cantidad de filas.
@@ -24,15 +24,15 @@ public abstract class Relacion implements Iterable<Fila>{
      * @param indiceColumna Indice de la columna.
      * @return String con el nombre calificado
      */
-    public abstract String obtenerNombreCalificado( int indiceColumna ) throws ExcepcionTabla;
+    public abstract String getQualifiedName( int indiceColumna ) throws TableException;
     
     /**
      * @return Devuelve un arreglo con todos los nombres calificados.
      */
     public ArrayList<String> obtenerTodosNombreCalificados(){
         ArrayList<String> retorno = new ArrayList<>();
-        for (int i = 0; i < obtenerEsquema().obtenerTamaño(); i++) {
-            retorno.add( obtenerNombreCalificado(i) );
+        for (int i = 0; i < getSchema().getSize(); i++) {
+            retorno.add(getQualifiedName(i) );
         }
         
         return retorno;

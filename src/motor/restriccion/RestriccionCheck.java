@@ -1,13 +1,13 @@
 package motor.restriccion;
 
-import condicion.Condicion;
-import excepciones.ExcepcionTabla;
+import condition.Condition;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import motor.Dato;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.Data;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 
 /**
  *
@@ -15,14 +15,14 @@ import motor.relacion.Relacion;
  */
 public class RestriccionCheck extends Restriccion{
     /** Condicion a aplicar a cada fila */
-    private Condicion condicionAplicar;
+    private Condition condicionAplicar;
     private transient String[] camposCondicion;
     
     /**
      * Obtiene la restricción a aplicar.
      * @param condicionAplicar 
      */
-    public RestriccionCheck(Condicion condicionAplicar) {
+    public RestriccionCheck(Condition condicionAplicar) {
         this.condicionAplicar = condicionAplicar;
     }
     
@@ -31,38 +31,38 @@ public class RestriccionCheck extends Restriccion{
      * @return 
      */
     public ArrayList<String> obtenerCamposReferenciados(){
-        return new ArrayList<>(Arrays.asList(condicionAplicar.obtenerColumnasUtilizadas()));
+        return new ArrayList<>(Arrays.asList(condicionAplicar.getUsedColumns()));
     }
     
     /**
      * Evalua la restricción en una fila dada.
      * @param filaEvaluar 
      */
-    public void evaluarRestriccion( Relacion relacion, Fila filaEvaluar ){
+    public void evaluarRestriccion( Relation relacion, Row filaEvaluar ){
         // Obtiene los campos de la condicion
         if( camposCondicion == null )
-            camposCondicion = condicionAplicar.obtenerColumnasUtilizadas();
+            camposCondicion = condicionAplicar.getUsedColumns();
         
         // Llena el mapa de datos
-        HashMap<String, Dato> mapaDatos = new HashMap<>();
+        HashMap<String, Data> mapaDatos = new HashMap<>();
         
         ArrayList<String> camposRelacion = relacion.obtenerTodosNombreCalificados();
         for (String campoActual : camposRelacion) {
             int indice = camposRelacion.indexOf( campoActual );
             if( indice != -1 )
-                mapaDatos.put(campoActual, filaEvaluar.obtenerDato(indice) );
+                mapaDatos.put(campoActual, filaEvaluar.getDatum(indice) );
         }
         
-        if( !condicionAplicar.evaluar(mapaDatos) )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.FalloRestriccion, "No se cumple la restricción CHECK " + condicionAplicar.toString());
+        if( !condicionAplicar.evaluate(mapaDatos) )
+            throw new TableException(TableException.TipoError.FalloRestriccion, "No se cumple la restricción CHECK " + condicionAplicar.toString());
     }
     
     /**
      * Evalua una restriccion con todas las filas de una relación.
      * @param relacion 
      */
-    public void evaluarRestriccion( Relacion relacion ) throws ExcepcionTabla{
-        for (Fila filaActual : relacion) {
+    public void evaluarRestriccion( Relation relacion ) throws TableException{
+        for (Row filaActual : relacion) {
             evaluarRestriccion(relacion, filaActual);
         }
     }
@@ -73,6 +73,6 @@ public class RestriccionCheck extends Restriccion{
      */
     @Override
     public void cambiarNombreTabla(String nuevoNombre) {
-        condicionAplicar.cambiarNombreTabla(null, nuevoNombre);
+        condicionAplicar.changeTableName(null, nuevoNombre);
     }
 }

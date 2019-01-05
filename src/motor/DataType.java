@@ -4,6 +4,6 @@ package motor;
  *
  * @author Jorge
  */
-public enum TipoDato {
+public enum DataType {
     INT, FLOAT, DATE, CHAR, NULL
 }

@@ -1,50 +1,50 @@
 package motor.relacion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import motor.Dato;
-import motor.TipoDato;
+import motor.Data;
+import motor.DataType;
 import org.stringtemplate.v4.misc.ArrayIterator;
 
 /**
  *
  * @author Jorge
  */
-public class Fila implements java.io.Serializable, Iterable<Dato>{
+public class Row implements java.io.Serializable, Iterable<Data>{
     /** Datos asociados a la fila */
-    private final Dato[] datos;
+    private final Data[] datos;
     
     /** Esquema asociado de la fila */
-    private transient Esquema esquemaFila;
+    private transient Schema esquemaFila;
     
 
     /**
      * Constructor con datos.
      * @param datos Datos asociados
      */
-    public Fila(Dato ... datos) {
+    public Row(Data ... datos) {
         this.datos = datos;
     }
     
     /**
      * Obtiene el esquema de la fila.
      * @return Arreglo con el tipo de dato de cada parte.
-     * @throws ExcepcionTabla Lanzada si algún dato es inválido.
+     * @throws TableException Lanzada si algún dato es inválido.
      */
-    public Esquema obtenerEsquema() throws ExcepcionTabla{
+    public Schema obtenerEsquema() throws TableException{
         if( esquemaFila != null )
             return esquemaFila;
         
-        TipoDato[] esquema = new TipoDato[this.datos.length];
+        DataType[] esquema = new DataType[this.datos.length];
         for (int i = 0; i != datos.length; i++) {
             if( (esquema[i] = datos[i].obtenerTipo()) == null )
-                throw new ExcepcionTabla(ExcepcionTabla.TipoError.EsquemaInvalido,
+                throw new TableException(TableException.TipoError.EsquemaInvalido,
                         String.format( "La fila posee un dato no soportado (%s).",
-                        datos[i].obtenerValor().getClass() ) );
+                        datos[i].getValue().getClass() ) );
         }
-        esquemaFila = new Esquema(esquema);
+        esquemaFila = new Schema(esquema);
         
         return esquemaFila;
     }
@@ -54,21 +54,21 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
      * @return 
      */
     @Override
-    public Iterator<Dato> iterator() {
+    public Iterator<Data> iterator() {
         return (Iterator)new ArrayIterator( datos );
     }
     
     /**
      * @return Devuelve un arreglo con los datos.
      */
-    public Dato[] obtenerDatos(){
+    public Data[] obtenerDatos(){
         return datos;
     }
     
     /**
      * @return Devuelve el dato en la posición dada.
      */
-    public Dato obtenerDato( int indice ){
+    public Data getDatum( int indice ){
         return datos[indice];
     }
     
@@ -80,12 +80,12 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
         StringBuilder stringFila = new StringBuilder("(");
         boolean primero = true;
         
-        for (Dato datoActual : datos) {
+        for (Data datoActual : datos) {
             if( primero ){
-                stringFila.append(datoActual.representacion());
+                stringFila.append(datoActual.representation());
                 primero = false;
             } else {
-                stringFila.append(", ").append(datoActual.representacion());
+                stringFila.append(", ").append(datoActual.representation());
             }
         }
         stringFila.append(")");
@@ -108,7 +108,7 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Fila other = (Fila) obj;
+        final Row other = (Row) obj;
         if (!Arrays.deepEquals(this.datos, other.datos)) {
             return false;
         }
@@ -122,23 +122,23 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
      * @param fila Fila que se desea cambiarEsquema
      * @return Nueva fila que cumple con el esquema solicitado
      */
-    public static Fila cambiarEsquema(Esquema esquema, Fila fila){
-        TipoDato[] listaTipos = esquema.obtenerTipos();
-        Dato[] listaDatos = fila.obtenerDatos();
+    public static Row cambiarEsquema(Schema esquema, Row fila){
+        DataType[] listaTipos = esquema.getTypes();
+        Data[] listaDatos = fila.obtenerDatos();
         
         // Verifica
         if( listaTipos.length != listaDatos.length )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.EsquemaNoCoincide, 
+            throw new TableException(TableException.TipoError.EsquemaNoCoincide, 
                     "No se puede realizar cast a un esquema de distinto tamaño.");
         
         // Crea los datos
-        ArrayList<Dato> datosRetorno = new ArrayList<>();
+        ArrayList<Data> datosRetorno = new ArrayList<>();
         for (int i=0; i<listaTipos.length; i++){
             datosRetorno.add( listaDatos[i].convertirA(listaTipos[i]) );
         }
         
         // Retorno de nueva fila
-        Fila filaRetorno = new Fila(datosRetorno.toArray(new Dato[0]));
+        Row filaRetorno = new Row(datosRetorno.toArray(new Data[0]));
         return filaRetorno;
     }
     
@@ -148,11 +148,11 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
      * @param b
      * @return Nueva fila
      */
-    public static Fila combinarFilas( Fila a, Fila b ){
-        ArrayList<Dato> datosFilas = new ArrayList<>(Arrays.asList(a.obtenerDatos()));
+    public static Row combinarFilas( Row a, Row b ){
+        ArrayList<Data> datosFilas = new ArrayList<>(Arrays.asList(a.obtenerDatos()));
         datosFilas.addAll(Arrays.asList(b.obtenerDatos()));
         
-        return new Fila( datosFilas.toArray(new Dato[0] ) );
+        return new Row( datosFilas.toArray(new Data[0] ) );
     }
     
     /**
@@ -161,8 +161,8 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
      * @param datosAgregar Datos a agregar.
      * @return Nueva fila
      */
-    public static Fila agregarDatos( Fila fila, Dato ... datosAgregar ){
-        Fila filaTemporal = new Fila(datosAgregar);
+    public static Row agregarDatos( Row fila, Data ... datosAgregar ){
+        Row filaTemporal = new Row(datosAgregar);
         
         return combinarFilas( fila, filaTemporal );
     }
@@ -174,11 +174,11 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
      * @param indicesEliminar Posiciones a eliminar.
      * @return Nueva fila
      */
-    public static Fila eliminarDatos( Fila fila, Integer ... indicesEliminar ){
+    public static Row eliminarDatos( Row fila, Integer ... indicesEliminar ){
         ArrayList<Integer> listaIndices = new ArrayList<>( Arrays.asList(indicesEliminar) );
-        ArrayList<Dato> datosFila = new ArrayList<>( Arrays.asList(fila.obtenerDatos()) );
+        ArrayList<Data> datosFila = new ArrayList<>( Arrays.asList(fila.obtenerDatos()) );
         
-        Iterator<Dato> iterador = datosFila.iterator();
+        Iterator<Data> iterador = datosFila.iterator();
         int indiceActual = 0;
         while( iterador.hasNext() ){
             iterador.next();
@@ -190,6 +190,6 @@ public class Fila implements java.io.Serializable, Iterable<Dato>{
             ++indiceActual;
         }
         
-        return new Fila( datosFila.toArray(new Dato[0] ) );
+        return new Row( datosFila.toArray(new Data[0] ) );
     }
 }

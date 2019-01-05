@@ -1,6 +1,6 @@
 package motor.relacion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -9,16 +9,16 @@ import java.util.NoSuchElementException;
  * ingresada.
  * @author Jorge
  */
-public class RelacionTemporalFila extends Relacion{
+public class RelacionTemporalFila extends Relation{
     RelacionTerminal relacionContenida;
-    Fila filaExtra;
+    Row filaExtra;
 
     /**
      * Constructor con relación y fila.
      * @param relacionContenida Relación base.
      * @param filaExtra Fila extra a utilizar.
      */
-    public RelacionTemporalFila(RelacionTerminal relacionContenida, Fila filaExtra) {
+    public RelacionTemporalFila(RelacionTerminal relacionContenida, Row filaExtra) {
         this.relacionContenida = relacionContenida;
         this.filaExtra = filaExtra;
     }
@@ -28,8 +28,8 @@ public class RelacionTemporalFila extends Relacion{
      * @return Esquema de la relación.
      */
     @Override
-    public Esquema obtenerEsquema() {
-        return relacionContenida.obtenerEsquema();
+    public Schema getSchema() {
+        return relacionContenida.getSchema();
     }
 
     /**
@@ -45,16 +45,16 @@ public class RelacionTemporalFila extends Relacion{
      * Devuelve el nombre calificado.
      * @param indiceColumna
      * @return
-     * @throws ExcepcionTabla 
+     * @throws TableException 
      */
     @Override
-    public String obtenerNombreCalificado(int indiceColumna) throws ExcepcionTabla {
-        return relacionContenida.obtenerNombreCalificado(indiceColumna);
+    public String getQualifiedName(int indiceColumna) throws TableException {
+        return relacionContenida.getQualifiedName(indiceColumna);
     }
 
     
     @Override
-    public Iterator<Fila> iterator() {
+    public Iterator<Row> iterator() {
         return new Iterador();
     }
     
@@ -64,8 +64,8 @@ public class RelacionTemporalFila extends Relacion{
     /**
      * Clase iterador.
      */
-    public class Iterador implements Iterator<Fila>{
-        private Iterator<Fila> iteradorRelacion;
+    public class Iterador implements Iterator<Row>{
+        private Iterator<Row> iteradorRelacion;
         private boolean continuar;
 
         /**
@@ -84,7 +84,7 @@ public class RelacionTemporalFila extends Relacion{
         }
 
         @Override
-        public Fila next() {
+        public Row next() {
             if( iteradorRelacion.hasNext() )
                 return iteradorRelacion.next();
             else if( continuar ){

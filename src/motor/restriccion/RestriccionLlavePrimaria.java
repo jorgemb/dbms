@@ -1,12 +1,12 @@
 package motor.restriccion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import motor.Dato;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.Data;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 
 /**
  * Representa una restricción de llave primaria, lo que significa que el o 
@@ -16,7 +16,7 @@ import motor.relacion.Relacion;
 public class RestriccionLlavePrimaria extends Restriccion {
     /** Campos referenciados por la llave primaria */
     private String[] camposReferenciados;
-    transient private HashSet<Fila> llavesActuales;
+    transient private HashSet<Row> llavesActuales;
     transient private ArrayList<Integer> indicesReferenciados;
     
     /**
@@ -39,16 +39,16 @@ public class RestriccionLlavePrimaria extends Restriccion {
     /**
      * Evalúa la restricción sobre una relación.
      * @param relacion
-     * @throws ExcepcionTabla 
+     * @throws TableException 
      */
-    public void evaluarRestriccion(Relacion relacion) throws ExcepcionTabla {
+    public void evaluarRestriccion(Relation relacion) throws TableException {
         // Calcula los indices referenciados
         calcularIndicesReferenciados(relacion);
         
         // Verifica la restricción por cada fila
         llavesActuales = new HashSet<>();
         
-        for (Fila filaActual : relacion) {
+        for (Row filaActual : relacion) {
             evaluarFilaIncremental(filaActual);
         }
     }
@@ -59,21 +59,21 @@ public class RestriccionLlavePrimaria extends Restriccion {
      * restricción una vez antes.
      * @param fila 
      */
-    public void evaluarFilaIncremental( Fila fila ){
+    public void evaluarFilaIncremental( Row fila ){
         // Construye las llaves si no existen
         if( llavesActuales == null )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.RestriccionErrorEnParametros, 
+            throw new TableException(TableException.TipoError.RestriccionErrorEnParametros, 
                     "No se puede evaluar la restricción de llave primaria de forma incremental si no se ha evaluado una vez con toda la relación.");
         
         // Construye la fila nueva
-        Dato[] datosFila = new Dato[camposReferenciados.length];
+        Data[] datosFila = new Data[camposReferenciados.length];
         for (int i = 0; i < camposReferenciados.length; i++) {
-            datosFila[i] = fila.obtenerDato( indicesReferenciados.get(i) );
+            datosFila[i] = fila.getDatum( indicesReferenciados.get(i) );
         }
 
-        Fila filaLlave = new Fila(datosFila);
+        Row filaLlave = new Row(datosFila);
         if( !llavesActuales.add(filaLlave) )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.FalloRestriccion,
+            throw new TableException(TableException.TipoError.FalloRestriccion,
                     String.format("Ya existe la llave %s en la tabla", filaLlave.toString()) );
     }
     
@@ -83,19 +83,19 @@ public class RestriccionLlavePrimaria extends Restriccion {
      * llave primaria.
      * @param relacion 
      */
-    private void calcularIndicesReferenciados( Relacion relacion ){
+    private void calcularIndicesReferenciados( Relation relacion ){
         // Verifica que la relación tenga todos los campos necesarios.
         ArrayList<Object> camposRelacion = new ArrayList<>();
         indicesReferenciados = new ArrayList<>();
         
-        for (int i = 0; i < relacion.obtenerEsquema().obtenerTamaño(); i++) {
-            camposRelacion.add(relacion.obtenerNombreCalificado(i));
+        for (int i = 0; i < relacion.getSchema().getSize(); i++) {
+            camposRelacion.add(relacion.getQualifiedName(i));
         }
         
         for (int i = 0; i < camposReferenciados.length; i++) {
             int indiceActual = camposRelacion.indexOf(camposReferenciados[i]);
             if( indiceActual == -1 )
-                throw new ExcepcionTabla(ExcepcionTabla.TipoError.RestriccionErrorEnParametros, 
+                throw new TableException(TableException.TipoError.RestriccionErrorEnParametros, 
                         "La relación no posee todos los argumentos necesarios para la evaluación de la llave primaria." );
             else
                 indicesReferenciados.add( indiceActual );
@@ -111,7 +111,7 @@ public class RestriccionLlavePrimaria extends Restriccion {
         String[] nuevosCamposReferenciados = new String[camposReferenciados.length];
         
         for (int i = 0; i < camposReferenciados.length; i++) {
-            String nombreCampo = motor.Util.obtenerNombreCampo(camposReferenciados[i]);
+            String nombreCampo = motor.Util.getFieldName(camposReferenciados[i]);
             nuevosCamposReferenciados[i] = String.format("%s.%s", nuevoNombre, nombreCampo);
         }
         

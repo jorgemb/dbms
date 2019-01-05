@@ -1,26 +1,26 @@
 package motor.relacion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import motor.Dato;
+import motor.Data;
 
 /**
  * Representa a la relación resultante de realizar el producto cruz de dos
  * relaciones.
  * @author Jorge
  */
-public class RelacionProductoCruz extends Relacion{
+public class RelacionProductoCruz extends Relation{
     /** Relaciones encapsuladas por la relacion actual */
-    private Relacion relacionIzq, relacionDer;
+    private Relation relacionIzq, relacionDer;
 
     /**
      * Constructor de la relacion.
      * @param relacionIzq Parte izquierda del producto cruzado.
      * @param relacionDer Parte derecha del producto cruzado.
      */
-    public RelacionProductoCruz(Relacion relacionIzq, Relacion relacionDer) {
+    public RelacionProductoCruz(Relation relacionIzq, Relation relacionDer) {
         this.relacionIzq = relacionIzq;
         this.relacionDer = relacionDer;
     }
@@ -29,8 +29,8 @@ public class RelacionProductoCruz extends Relacion{
      * @return Esquema de la relación.
      */
     @Override
-    public Esquema obtenerEsquema() {
-        return Esquema.combinarEsquemas(relacionIzq.obtenerEsquema(), relacionDer.obtenerEsquema());
+    public Schema getSchema() {
+        return Schema.combinarEsquemas(relacionIzq.getSchema(), relacionDer.getSchema());
     }
 
     /**
@@ -45,22 +45,22 @@ public class RelacionProductoCruz extends Relacion{
      * Devuelve el nombre calificado de la columna dada.
      * @param indiceColumna Índice de la columna a consultar.
      * @return String con el nombre calificado.
-     * @throws ExcepcionTabla 
+     * @throws TableException 
      */
     @Override
-    public String obtenerNombreCalificado(int indiceColumna) throws ExcepcionTabla {
-        int columnasIzq = relacionIzq.obtenerEsquema().obtenerTamaño();
+    public String getQualifiedName(int indiceColumna) throws TableException {
+        int columnasIzq = relacionIzq.getSchema().getSize();
         if( indiceColumna < columnasIzq )
-            return relacionIzq.obtenerNombreCalificado(indiceColumna);
+            return relacionIzq.getQualifiedName(indiceColumna);
         else
-            return relacionDer.obtenerNombreCalificado(indiceColumna-columnasIzq);
+            return relacionDer.getQualifiedName(indiceColumna-columnasIzq);
     }
     
     /**
      * @return Iterador sobre la relacion
      */
     @Override
-    public Iterator<Fila> iterator() {
+    public Iterator<Row> iterator() {
         return new Iterador();
     }
     
@@ -68,9 +68,9 @@ public class RelacionProductoCruz extends Relacion{
     /**
      * Iterador sobre la relación.
      */
-    public class Iterador implements Iterator<Fila>{
-        private Iterator<Fila> iterIzquierdo, iterDerecho;
-        private ArrayList<Dato> filaIzquierdaActual;
+    public class Iterador implements Iterator<Row>{
+        private Iterator<Row> iterIzquierdo, iterDerecho;
+        private ArrayList<Data> filaIzquierdaActual;
         
         /**
          * Constructor por defecto.
@@ -98,12 +98,12 @@ public class RelacionProductoCruz extends Relacion{
          * @return Devuelve la siguiente fila, y avanza la iteración.
          */
         @Override
-        public Fila next() {
+        public Row next() {
             // Crea la nueva fila
             if( iterDerecho.hasNext() ){
-                ArrayList<Dato> datosFila = new ArrayList<>( filaIzquierdaActual );
+                ArrayList<Data> datosFila = new ArrayList<>( filaIzquierdaActual );
                 datosFila.addAll( Arrays.asList( iterDerecho.next().obtenerDatos() ) );
-                return new Fila( datosFila.toArray( new Dato[0] ) );
+                return new Row( datosFila.toArray(new Data[0] ) );
             } else if( iterIzquierdo.hasNext() ){
                 filaIzquierdaActual = new ArrayList<>( Arrays.asList( iterIzquierdo.next().obtenerDatos() ) );
                 iterDerecho = relacionDer.iterator();

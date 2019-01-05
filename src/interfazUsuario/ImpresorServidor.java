@@ -6,15 +6,15 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
-import motor.Dato;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.Data;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 
 /**
  * Permite imprimir los mensajes de salida de queries a la consola.
  * @author Jorge
  */
-public class ImpresorServidor implements Impresor, Closeable{
+public class ImpresorServidor implements Printer, Closeable{
     private int idImpresor;
     private BufferedWriter salida;
     
@@ -51,7 +51,7 @@ public class ImpresorServidor implements Impresor, Closeable{
     public final static String TIPO_RELACION = "Relacion";
     
     @Override
-    public void imprimirMensaje(String txtMensaje) {
+    public void printMessage(String txtMensaje) {
         try {
             // Crea un nuevo JSON
             JsonObject jsonMensaje = new JsonObject();
@@ -67,7 +67,7 @@ public class ImpresorServidor implements Impresor, Closeable{
     }
 
     @Override
-    public void imprimirError(String txtError) {
+    public void printError(String txtError) {
         try {
             // Crea un nuevo JSON
             JsonObject jsonError = new JsonObject();
@@ -83,7 +83,7 @@ public class ImpresorServidor implements Impresor, Closeable{
     }
 
     @Override
-    public void imprimirRelacion(Relacion relacion) {
+    public void printRelation(Relation relacion) {
         Gson gson = new Gson();
         try{
             // Construye poco a poco el json correspondiente
@@ -98,14 +98,14 @@ public class ImpresorServidor implements Impresor, Closeable{
             salida.append( String.format("\"%s\":%s,", CAMPO_NOMBRES,
                     gson.toJson(relacion.obtenerTodosNombreCalificados())));
             salida.append( String.format("\"%s\":%s},", CAMPO_TIPOS, 
-                    gson.toJson( relacion.obtenerEsquema().obtenerTipos() )));
+                    gson.toJson( relacion.getSchema().getTypes() )));
             salida.newLine();
             
             // Ingresa los datos de la relación
             salida.append( String.format("\"%s\":[", CAMPO_DATOS) );
             
             boolean primero = true;
-            for (Fila fila : relacion) {
+            for (Row fila : relacion) {
                 // Verifica si es la primera fila
                 if( !primero ){
                     salida.append(",");
@@ -115,8 +115,8 @@ public class ImpresorServidor implements Impresor, Closeable{
                 
                 // Imprime la fila
                 ArrayList<Object> datos = new ArrayList<>();
-                for (Dato dato : fila.obtenerDatos()) {
-                    datos.add(dato.obtenerValor());
+                for (Data dato : fila.obtenerDatos()) {
+                    datos.add(dato.getValue());
                 }
                 salida.append( gson.toJson(datos) );
             }
@@ -129,7 +129,7 @@ public class ImpresorServidor implements Impresor, Closeable{
     }
 
     @Override
-    public boolean obtenerConfirmacion(String mensaje) {
+    public boolean getConfirmation(String mensaje) {
         // TODO
         return true;
     }

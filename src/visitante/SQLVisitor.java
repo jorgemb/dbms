@@ -1,22 +1,21 @@
 
 package visitante;
 
-import condicion.Condicion;
-import condicion.CondicionTrue;
-import condicion.Expresion;
-import condicion.Nodo;
-import condicion.NodoCondicional;
-import condicion.NodoCondicional.TipoOperacionCondicional;
-import condicion.NodoDato;
-import condicion.NodoLiteral;
-import condicion.NodoLiteral.TipoLiteral;
-import condicion.NodoOperacional;
-import condicion.NodoOperacional.TipoOperacionOperacional;
-import condicion.NodoRelacional;
-import condicion.NodoRelacional.TipoOperacionRelacional;
-import excepciones.ExcepcionBaseDatos;
-import excepciones.ExcepcionDBMS;
-import excepciones.ExcepcionTabla;
+import condition.Condition;
+import condition.TrueCondition;
+import condition.Expression;
+import condition.ConditionalNode;
+import condition.ConditionalNode.ConditionalOperationType;
+import condition.DataNode;
+import condition.LiteralNode;
+import condition.LiteralNode.LiteralType;
+import condition.OperationNode;
+import condition.OperationNode.OperationType;
+import condition.RelationNode;
+import condition.RelationNode.RelationType;
+import excepciones.DatabaseException;
+import excepciones.DBMSException;
+import excepciones.TableException;
 import grammar.SQLGrammarParser;
 import grammar.SQLGrammarParser.ExpressionContext;
 import grammar.SQLGrammarParser.IdValueContext;
@@ -34,12 +33,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import motor.BaseDatos;
-import motor.Dato;
+import motor.Data;
 import motor.restriccion.Restriccion;
 import motor.Tabla;
-import motor.TipoDato;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.DataType;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 import motor.relacion.RelacionFiltro;
 import motor.relacion.RelacionOrdenamiento;
 import motor.relacion.RelacionOrdenamiento.TipoOrdenamiento;
@@ -49,12 +48,13 @@ import motor.restriccion.RestriccionChar;
 import motor.restriccion.RestriccionCheck;
 import motor.restriccion.RestriccionLlavePrimaria;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import condition.Node;
 
 /**
  *
  * @author eddycastro
  */
-public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
+public class SQLVisitor extends SQLGrammarBaseVisitor<Object>{
     
     // Contiene la Base de Datos que se encuentra en uso
     private BaseDatos baseDatosActual = null;
@@ -69,7 +69,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     /**
      * Constructor de la clase
      */
-    public VisitanteSQL() {
+    public SQLVisitor() {
         
         // Agregar funcionalidad si hace falta
         
@@ -228,11 +228,11 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                 
                 if (contador != 0){
                     String nombreColumna = id.getText();
-                    TipoDato tipoColumna = (TipoDato)visit(ctx.columnType(contador-1));
+                    DataType tipoColumna = (DataType)visit(ctx.columnType(contador-1));
                     tablaActual.agregarColumna(nombreColumna, tipoColumna);
                     
                     // Verifica si es necesario agregar una restriccion
-                    if( tipoColumna == TipoDato.CHAR ){
+                    if( tipoColumna == DataType.CHAR ){
                         int limiteChar = Integer.parseInt( ctx.columnType(contador-1).int_literal().NUM().getText() );
                         
                         /* NOTA: Utiliza UUID para asegurar que el nombre de la restricción sea único. */
@@ -261,7 +261,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             
             
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -327,7 +327,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         else{
             
             // Crear la restricción
-            Condicion condicionCheck = new Condicion((Nodo)visit(ctx.expression()));
+            Condition condicionCheck = new Condition((Node)visit(ctx.expression()));
             Restriccion restriccionCheck = new RestriccionCheck(condicionCheck);
             
             // Agregar restricción
@@ -348,13 +348,13 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     public Object visitColumnType(SQLGrammarParser.ColumnTypeContext ctx){
         
         if (ctx.INT() != null){
-            return TipoDato.INT;
+            return DataType.INT;
         } else if (ctx.FLOAT() != null){
-            return TipoDato.FLOAT;
+            return DataType.FLOAT;
         } else if (ctx.DATE() != null){
-           return TipoDato.DATE;
+           return DataType.DATE;
         } else {
-           return TipoDato.CHAR;
+           return DataType.CHAR;
            
            // TODO char debe agregar una nueva restricción
            
@@ -376,7 +376,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             baseDatosActual.eliminarTabla(ctx.ID().getText());
             MessagePrinter.imprimirMensajeUsuario(String.format("La tabla %s ha sido eliminada de la base de datos %s.", ctx.ID().getText(), baseDatosActual.obtenerNombre()));
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
 
@@ -404,7 +404,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                 
             }
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -437,20 +437,20 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             }
             // Verificar que exista la tabla
             if (tablaActual == null){
-                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.printErrorMessage(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
                 MessagePrinter.imprimirMensajeUsuario(String.format("Columnas de la tabla %s:", tablaActual.obtenerNombre()));
                 
                 // Mostrar todas las columnas
-                HashMap<String, TipoDato> columnas = tablaActual.obtenerColumnas();
-                for (Map.Entry<String, TipoDato> columnaActual : columnas.entrySet()) {
+                HashMap<String, DataType> columnas = tablaActual.obtenerColumnas();
+                for (Map.Entry<String, DataType> columnaActual : columnas.entrySet()) {
                     MessagePrinter.imprimirMensajeUsuario(String.format("%s %s \n", columnaActual.getKey(), columnaActual.getValue()));
                 }
             }
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -490,7 +490,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                 
                 // Verificar que exista la tabla
                 if (tablaActual == null){
-                    MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID(0).getText()));
+                    MessagePrinter.printErrorMessage(String.format("No existe la tabla %s.", ctx.ID(0).getText()));
                     return false;
                 } else{
                     
@@ -505,7 +505,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             
             }
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         return true;
@@ -523,13 +523,13 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         // Acción agregar columna
         if (ctx.ADD() != null && ctx.COLUMN() != null){
             String nombreColumna = ctx.ID().getText();
-            TipoDato tipoColumna = (TipoDato)visit(ctx.columnType());
+            DataType tipoColumna = (DataType)visit(ctx.columnType());
             
             tablaActual.agregarColumna(nombreColumna, tipoColumna);
             MessagePrinter.imprimirMensajeUsuario(String.format("Columna %s agregada a la tabla %s.", ctx.ID().getText(), tablaActual.obtenerNombre()));
 
             // Verifica si es necesario agregar una restriccion
-            if( tipoColumna == TipoDato.CHAR ){
+            if( tipoColumna == DataType.CHAR ){
                 int limiteChar = Integer.parseInt( ctx.columnType().int_literal().NUM().getText() );
 
                 /* NOTA: Utiliza UUID para asegurar que el nombre de la restricción sea único. */
@@ -597,14 +597,14 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             
             // Verificar que exista la tabla
             if (tablaActual == null){
-                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.printErrorMessage(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
                 // Datos a insertar en fila
-                ArrayList<Dato> datos = new ArrayList<>();
+                ArrayList<Data> datos = new ArrayList<>();
                 //Dato[] datos;
-                Dato dato;
+                Data dato;
                 
                 // Valores que se van a insertar
                 ArrayList<Object> valores = (ArrayList<Object>)visit(ctx.valueList());
@@ -618,14 +618,14 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                     
                     // Verifica que existan suficients valores para la cantidad de columnas
                     if( valores.size() != nombres.size() )
-                        throw new ExcepcionDBMS("No hay suficientes valores especificados para la cantidad de nombres dados.");
+                        throw new DBMSException("No hay suficientes valores especificados para la cantidad de nombres dados.");
 
                     ArrayList<String> nombreColumnasArreglo = new ArrayList<>(Arrays.asList(nombreColumnas));
                     
                     for (String nombre : nombres){
                         if (!(nombreColumnasArreglo.contains(nombre))){
                             
-                            MessagePrinter.imprimirMensajeError(String.format("La columna %s no se encuentra en la tabla %S", nombre, tablaActual.obtenerNombre()));
+                            MessagePrinter.printErrorMessage(String.format("La columna %s no se encuentra en la tabla %S", nombre, tablaActual.obtenerNombre()));
                             return false;
                             
                         }
@@ -639,9 +639,9 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
 
                         // Verificar que se encuentre en el listado
                         if (indice != -1){
-                            dato = new Dato(valores.get(indice));
+                            dato = new Data(valores.get(indice));
                         } else{
-                            dato = new Dato(null);
+                            dato = new Data(null);
                         }
                         datos.add(dato);
                     }
@@ -649,7 +649,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                 // Caso en el que no se especifican columnas
                 } else {                    
                     for (Object valor : valores){
-                        dato = new Dato(valor);
+                        dato = new Data(valor);
                         datos.add(dato);
                     }
                     
@@ -657,7 +657,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                 
                 
                 //Construir la fila con los datos obtenidos y agregarla
-                tablaActual.agregarFila(new Fila(datos.toArray(new Dato[0])));
+                tablaActual.agregarFila(new Row(datos.toArray(new Data[0])));
                 if (echo){
                     MessagePrinter.imprimirMensajeUsuario(String.format("Insertados %s valores con éxito", datos.size()));
                 } else{
@@ -669,7 +669,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             }
             
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -709,13 +709,13 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         // recorrer todos verificando que cumplan
         for (ExpressionContext expresion : expresiones){
             
-            Nodo nodo = (Nodo)visit(expresion);
+            Node nodo = (Node)visit(expresion);
             
-            Condicion condicionPrueba = new Condicion(nodo);
-            if (condicionPrueba.obtenerColumnasUtilizadas().length == 0){
-                objetos.add(nodo.evaluar(null));
+            Condition condicionPrueba = new Condition(nodo);
+            if (condicionPrueba.getUsedColumns().length == 0){
+                objetos.add(nodo.evaluate(null));
             } else{
-                throw new ExcepcionTabla(ExcepcionTabla.TipoError.ErrorFatal, "No es posible utilizar una referencia para insertar en una tabla");
+                throw new TableException(TableException.TipoError.ErrorFatal, "No es posible utilizar una referencia para insertar en una tabla");
 //                ImpresorMensajes.imprimirMensajeError("No es posible utilizar una referencia para insertar en una tabla");
 //                return null;
             }
@@ -733,7 +733,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
      */
     @Override
     public Object visitLocationExpr(SQLGrammarParser.LocationExprContext ctx){
-        Nodo nodo = (Nodo)visit(ctx.location());
+        Node nodo = (Node)visit(ctx.location());
         return nodo;
     }
     
@@ -745,13 +745,13 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitLocation(SQLGrammarParser.LocationContext ctx){
         
-        NodoDato nodoRetorno;
+        DataNode nodoRetorno;
         
         // Verificar si ya es de la forma ID.ID
         if (ctx.ID(1) != null){
-            nodoRetorno = new NodoDato(ctx.ID(0).getText()+"."+ctx.ID(1));
+            nodoRetorno = new DataNode(ctx.ID(0).getText()+"."+ctx.ID(1));
         } else {
-            nodoRetorno = new NodoDato(tablaActual.obtenerNombre()+"."+ctx.ID(0));
+            nodoRetorno = new DataNode(tablaActual.obtenerNombre()+"."+ctx.ID(0));
         }
         
         return nodoRetorno;
@@ -766,7 +766,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitInt_literal(SQLGrammarParser.Int_literalContext ctx){
         //Dato valor = new Dato(Integer.valueOf(ctx.NUM().getText()));
-        NodoLiteral nodoRetorno = new NodoLiteral(Integer.valueOf(ctx.NUM().getText()), TipoLiteral.INT);
+        LiteralNode nodoRetorno = new LiteralNode(Integer.valueOf(ctx.NUM().getText()), LiteralType.INT);
         return nodoRetorno;
     }
     
@@ -779,7 +779,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     public Object visitString_literal(SQLGrammarParser.String_literalContext ctx){
         //Dato valor = new Dato(ctx.STRING().getText());
         String s = ctx.STRING().getText();
-        NodoLiteral nodoRetorno = new NodoLiteral(s.substring(1, s.length()-1), TipoLiteral.STRING);
+        LiteralNode nodoRetorno = new LiteralNode(s.substring(1, s.length()-1), LiteralType.STRING);
         return nodoRetorno;
     }
     
@@ -791,7 +791,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitReal_literal(SQLGrammarParser.Real_literalContext ctx){
         //Dato valor = new Dato(Float.valueOf(ctx.REAL().getText()));
-        NodoLiteral nodoRetorno = new NodoLiteral(Float.valueOf(ctx.REAL().getText()), TipoLiteral.FLOAT);
+        LiteralNode nodoRetorno = new LiteralNode(Float.valueOf(ctx.REAL().getText()), LiteralType.FLOAT);
         return nodoRetorno;
     }
     
@@ -802,7 +802,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
      */
     @Override
     public Object visitNull_literal(SQLGrammarParser.Null_literalContext ctx){
-        NodoLiteral nodoRetorno = new NodoLiteral(null, TipoLiteral.NULL);
+        LiteralNode nodoRetorno = new LiteralNode(null, LiteralType.NULL);
         return nodoRetorno;
     }
     
@@ -814,28 +814,28 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitNegExpr(SQLGrammarParser.NegExprContext ctx){
         
-        Nodo nodo = (Nodo)visit(ctx.expression());
+        Node nodo = (Node)visit(ctx.expression());
         
         // Instancia de nodo literal
-        if (nodo instanceof NodoLiteral){
+        if (nodo instanceof LiteralNode){
             
-            if (((NodoLiteral)nodo).obtenerTipo() != TipoLiteral.STRING){
-                NodoLiteral nodoDummy = new NodoLiteral(0, TipoLiteral.INT);
-                NodoOperacional nodoRetorno = new NodoOperacional(TipoOperacionOperacional.Resta, nodoDummy, nodo);
+            if (((LiteralNode)nodo).getType() != LiteralType.STRING){
+                LiteralNode nodoDummy = new LiteralNode(0, LiteralType.INT);
+                OperationNode nodoRetorno = new OperationNode(OperationType.Subtraction, nodoDummy, nodo);
                 return nodoRetorno;
             }
             
         // Instancia de nodo operacional
-        } else if (nodo instanceof NodoOperacional) {
+        } else if (nodo instanceof OperationNode) {
             
-            NodoLiteral nodoDummy = new NodoLiteral(0, TipoLiteral.INT);
-            NodoOperacional nodoRetorno = new NodoOperacional(TipoOperacionOperacional.Resta, nodoDummy, nodo);
+            LiteralNode nodoDummy = new LiteralNode(0, LiteralType.INT);
+            OperationNode nodoRetorno = new OperationNode(OperationType.Subtraction, nodoDummy, nodo);
             return nodoRetorno;
             
         } else {
             
 //            ImpresorMensajes.imprimirMensajeError("No se puede utilizar el operador '-' en resultados no numéricos.");
-            throw new ExcepcionDBMS("No se puede utilizar el operador '-' en resultados no numéricos.");
+            throw new DBMSException("No se puede utilizar el operador '-' en resultados no numéricos.");
         }
         return null;
         
@@ -849,17 +849,17 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitMultdivExpr(SQLGrammarParser.MultdivExprContext ctx){
         
-        Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
-        Nodo nodoDer = (Nodo)visit(ctx.expression(1));
+        Node nodoIzq = (Node)visit(ctx.expression(0));
+        Node nodoDer = (Node)visit(ctx.expression(1));
         
         // Determinar el tipo de operación que se debe realizar
-        TipoOperacionOperacional tipo;
+        OperationType tipo;
         if (ctx.DIV_OP()!= null){
-            tipo = TipoOperacionOperacional.Division;
+            tipo = OperationType.Division;
         } else if (ctx.MOD_OP()!= null){
-            tipo = TipoOperacionOperacional.Modulo;
+            tipo = OperationType.Modulo;
         } else {
-            tipo = TipoOperacionOperacional.Multiplicacion;
+            tipo = OperationType.Multiplication;
         }
         
         boolean cumpleNodoIzq = true;
@@ -867,36 +867,36 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         
         // Nodo izquierdo
         // Instancia de nodo literal
-        if (nodoIzq instanceof NodoLiteral){
+        if (nodoIzq instanceof LiteralNode){
             
-            if (((NodoLiteral)nodoIzq).obtenerTipo() == TipoLiteral.STRING){
+            if (((LiteralNode)nodoIzq).getType() == LiteralType.STRING){
                 cumpleNodoIzq = false;
             }
             
         // Instancia de nodo operacional
-        } else if (!(nodoIzq instanceof NodoOperacional)  && !(nodoIzq instanceof NodoDato)) {
+        } else if (!(nodoIzq instanceof OperationNode)  && !(nodoIzq instanceof DataNode)) {
             cumpleNodoIzq = false;
         }
         
         // Nodo derecho
         // Instancia de nodo literal
-        if (nodoDer instanceof NodoLiteral){
+        if (nodoDer instanceof LiteralNode){
             
-            if (((NodoLiteral)nodoDer).obtenerTipo() == TipoLiteral.STRING){
+            if (((LiteralNode)nodoDer).getType() == LiteralType.STRING){
                 cumpleNodoDer = false;
             }
             
         // Instancia de nodo operacional
-        } else if (!(nodoDer instanceof NodoOperacional)  && !(nodoDer instanceof NodoDato)) {
+        } else if (!(nodoDer instanceof OperationNode)  && !(nodoDer instanceof DataNode)) {
             cumpleNodoDer = false;
         }
         
         // Verificar que ambos cumplan para retornar
         if (cumpleNodoIzq && cumpleNodoDer){
-            Nodo nodoRetorno = new NodoOperacional(tipo, nodoIzq, nodoDer);
+            Node nodoRetorno = new OperationNode(tipo, nodoIzq, nodoDer);
             return nodoRetorno;
         } else{
-            throw new ExcepcionDBMS(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
+            throw new DBMSException(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
 //            ImpresorMensajes.imprimirMensajeError(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
 //            return null;
         }
@@ -911,15 +911,15 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitAddsubExpr(SQLGrammarParser.AddsubExprContext ctx){
 
-        Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
-        Nodo nodoDer = (Nodo)visit(ctx.expression(1));
+        Node nodoIzq = (Node)visit(ctx.expression(0));
+        Node nodoDer = (Node)visit(ctx.expression(1));
         
         // Determinar el tipo de operación que se debe realizar
-        TipoOperacionOperacional tipo;
+        OperationType tipo;
         if (ctx.SUM_OP()!= null){
-            tipo = TipoOperacionOperacional.Suma;
+            tipo = OperationType.Sum;
         } else {
-            tipo = TipoOperacionOperacional.Resta;
+            tipo = OperationType.Subtraction;
         }
         
         boolean cumpleNodoIzq = true;
@@ -927,36 +927,36 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         
         // Nodo izquierdo
         // Instancia de nodo literal
-        if (nodoIzq instanceof NodoLiteral){
+        if (nodoIzq instanceof LiteralNode){
             
-            if (((NodoLiteral)nodoIzq).obtenerTipo() == TipoLiteral.STRING){
+            if (((LiteralNode)nodoIzq).getType() == LiteralType.STRING){
                 cumpleNodoIzq = false;
             }
             
         // Instancia de nodo operacional
-        } else if (!(nodoIzq instanceof NodoOperacional)  && !(nodoIzq instanceof NodoDato)) {
+        } else if (!(nodoIzq instanceof OperationNode)  && !(nodoIzq instanceof DataNode)) {
             cumpleNodoIzq = false;
         }
         
         // Nodo derecho
         // Instancia de nodo literal
-        if (nodoDer instanceof NodoLiteral){
+        if (nodoDer instanceof LiteralNode){
             
-            if (((NodoLiteral)nodoDer).obtenerTipo() == TipoLiteral.STRING){
+            if (((LiteralNode)nodoDer).getType() == LiteralType.STRING){
                 cumpleNodoDer = false;
             }
             
         // Instancia de nodo operacional
-        } else if (!(nodoDer instanceof NodoOperacional)  && !(nodoDer instanceof NodoDato)) {
+        } else if (!(nodoDer instanceof OperationNode)  && !(nodoDer instanceof DataNode)) {
             cumpleNodoDer = false;
         }
         
         // Verificar que ambos cumplan para retornar
         if (cumpleNodoIzq && cumpleNodoDer){
-            Nodo nodoRetorno = new NodoOperacional(tipo, nodoIzq, nodoDer);
+            Node nodoRetorno = new OperationNode(tipo, nodoIzq, nodoDer);
             return nodoRetorno;
         } else{
-            throw new ExcepcionDBMS(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
+            throw new DBMSException(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
 //            ImpresorMensajes.imprimirMensajeError(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
 //            return null;
         }        
@@ -971,16 +971,16 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitNotExpr(SQLGrammarParser.NotExprContext ctx){
         
-        Nodo nodo = (Nodo)visit(ctx.expression());
+        Node nodo = (Node)visit(ctx.expression());
         
         // Instancia de nodo literal
-        if (nodo instanceof NodoRelacional || nodo instanceof NodoCondicional){
+        if (nodo instanceof RelationNode || nodo instanceof ConditionalNode){
             
-            NodoCondicional nodoRetorno = new NodoCondicional(nodo);
+            ConditionalNode nodoRetorno = new ConditionalNode(nodo);
             return nodoRetorno;
             
         } else {
-            throw new ExcepcionDBMS("No se puede utilizar el operador '!' en resultados no booleanos.");
+            throw new DBMSException("No se puede utilizar el operador '!' en resultados no booleanos.");
 //            ImpresorMensajes.imprimirMensajeError("No se puede utilizar el operador '!' en resultados no booleanos.");
             
         }
@@ -996,21 +996,21 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitRelExpr(SQLGrammarParser.RelExprContext ctx){
         
-        Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
-        Nodo nodoDer = (Nodo)visit(ctx.expression(1));
+        Node nodoIzq = (Node)visit(ctx.expression(0));
+        Node nodoDer = (Node)visit(ctx.expression(1));
         
         // Determinar el tipo de operación que se debe realizar
-        TipoOperacionRelacional tipo;
+        RelationType tipo;
         String operador = ctx.REL_OP().getText();
         
         if (operador.equals("<")){
-            tipo = TipoOperacionRelacional.Menor;
+            tipo = RelationType.Less;
         } else  if (operador.equals(">")){
-            tipo = TipoOperacionRelacional.Mayor;
+            tipo = RelationType.Greater;
         } else  if (operador.equals("<=")){
-            tipo = TipoOperacionRelacional.MenorIgual;
+            tipo = RelationType.LessEqual;
         } else{
-            tipo = TipoOperacionRelacional.MayorIgual;
+            tipo = RelationType.GreaterEqual;
         }
         
         boolean cumpleNodoIzq = true;
@@ -1018,36 +1018,36 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         
         // Nodo izquierdo
         // Instancia de nodo literal
-        if (nodoIzq instanceof NodoLiteral){
+        if (nodoIzq instanceof LiteralNode){
             
 //            if (((NodoLiteral)nodoIzq).obtenerTipo() == TipoLiteral.STRING){
 //                cumpleNodoIzq = false;
 //            }
             
         // Instancia de nodo operacional
-        } else if (!(nodoIzq instanceof NodoOperacional) && !(nodoIzq instanceof NodoDato)) {
+        } else if (!(nodoIzq instanceof OperationNode) && !(nodoIzq instanceof DataNode)) {
             cumpleNodoIzq = false;
         }
         
         // Nodo derecho
         // Instancia de nodo literal
-        if (nodoDer instanceof NodoLiteral){
+        if (nodoDer instanceof LiteralNode){
             
 //            if (((NodoLiteral)nodoDer).obtenerTipo() == TipoLiteral.STRING){
 //                cumpleNodoDer = false;
 //            }
             
         // Instancia de nodo operacional
-        } else if (!(nodoDer instanceof NodoOperacional) && !(nodoDer instanceof NodoDato)) {
+        } else if (!(nodoDer instanceof OperationNode) && !(nodoDer instanceof DataNode)) {
             cumpleNodoDer = false;
         }
         
         // Verificar que ambos cumplan para retornar
         if (cumpleNodoIzq && cumpleNodoDer){
-            Nodo nodoRetorno = new NodoRelacional(tipo, nodoIzq, nodoDer);
+            Node nodoRetorno = new RelationNode(tipo, nodoIzq, nodoDer);
             return nodoRetorno;
         } else{
-            throw new ExcepcionDBMS(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
+            throw new DBMSException(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
 //            ImpresorMensajes.imprimirMensajeError(String.format("No se puede aplicar '%s' a valores no numéricos.", tipo));
 //            return null;
         }  
@@ -1062,16 +1062,16 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitEqExpr(SQLGrammarParser.EqExprContext ctx){
         
-        Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
-        Nodo nodoDer = (Nodo)visit(ctx.expression(1));
+        Node nodoIzq = (Node)visit(ctx.expression(0));
+        Node nodoDer = (Node)visit(ctx.expression(1));
         
         // Determinar el tipo de operación que se debe realizar
-        TipoOperacionRelacional tipo;
+        RelationType tipo;
         
         if (ctx.eq_op().EQUALITY_OP()!= null){
-            tipo = TipoOperacionRelacional.Igual;
+            tipo = RelationType.Equal;
         }  else{
-            tipo = TipoOperacionRelacional.Diferente;
+            tipo = RelationType.Inequal;
         }
         
         boolean cumpleNodoIzq = true;
@@ -1079,22 +1079,22 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         
         // Nodo izquierdo            
         // Instancia de nodo operacional o literal
-        if (!(nodoIzq instanceof NodoOperacional) && !(nodoIzq instanceof NodoLiteral) && !(nodoIzq instanceof NodoDato)) {
+        if (!(nodoIzq instanceof OperationNode) && !(nodoIzq instanceof LiteralNode) && !(nodoIzq instanceof DataNode)) {
             cumpleNodoIzq = false;
         }
         
         // Nodo derecho            
         // Instancia de nodo operacional o literal
-        if (!(nodoDer instanceof NodoOperacional) && !(nodoDer instanceof NodoLiteral) && !(nodoDer instanceof NodoDato)) {
+        if (!(nodoDer instanceof OperationNode) && !(nodoDer instanceof LiteralNode) && !(nodoDer instanceof DataNode)) {
             cumpleNodoDer = false;
         }
         
         // Verificar que ambos cumplan para retornar
         if (cumpleNodoIzq && cumpleNodoDer){
-            Nodo nodoRetorno = new NodoRelacional(tipo, nodoIzq, nodoDer);
+            Node nodoRetorno = new RelationNode(tipo, nodoIzq, nodoDer);
             return nodoRetorno;
         } else{
-            throw new ExcepcionDBMS(String.format("No se puede aplicar '%s' a valores no numéricos o string.", tipo));
+            throw new DBMSException(String.format("No se puede aplicar '%s' a valores no numéricos o string.", tipo));
 //            ImpresorMensajes.imprimirMensajeError(String.format("No se puede aplicar '%s' a valores no numéricos o string.", tipo));
 //            return null;
         } 
@@ -1121,30 +1121,30 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitAndExpr(SQLGrammarParser.AndExprContext ctx){
         
-        Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
-        Nodo nodoDer = (Nodo)visit(ctx.expression(1));
+        Node nodoIzq = (Node)visit(ctx.expression(0));
+        Node nodoDer = (Node)visit(ctx.expression(1));
         
         boolean cumpleNodoIzq = true;
         boolean cumpleNodoDer = true;
         
         // Nodo izquierdo            
         // Instancia de nodo operacional o literal
-        if (!(nodoIzq instanceof NodoRelacional) && !(nodoIzq instanceof NodoCondicional) && !(nodoIzq instanceof NodoDato)) {
+        if (!(nodoIzq instanceof RelationNode) && !(nodoIzq instanceof ConditionalNode) && !(nodoIzq instanceof DataNode)) {
             cumpleNodoIzq = false;
         }
         
         // Nodo derecho            
         // Instancia de nodo operacional o literal
-        if (!(nodoDer instanceof NodoRelacional) && !(nodoDer instanceof NodoCondicional) && !(nodoDer instanceof NodoDato)) {
+        if (!(nodoDer instanceof RelationNode) && !(nodoDer instanceof ConditionalNode) && !(nodoDer instanceof DataNode)) {
             cumpleNodoDer = false;
         }
         
         // Verificar que ambos cumplan para retornar
         if (cumpleNodoIzq && cumpleNodoDer){
-            Nodo nodoRetorno = new NodoCondicional(TipoOperacionCondicional.AND, nodoIzq, nodoDer);
+            Node nodoRetorno = new ConditionalNode(ConditionalOperationType.AND, nodoIzq, nodoDer);
             return nodoRetorno;
         } else{
-            throw new ExcepcionDBMS(String.format("No se puede aplicar '%s' a valores no booleanos.", "AND"));
+            throw new DBMSException(String.format("No se puede aplicar '%s' a valores no booleanos.", "AND"));
 //            ImpresorMensajes.imprimirMensajeError(String.format("No se puede aplicar '%s' a valores no booleanos.", "AND"));
 //            return null;
         } 
@@ -1159,30 +1159,30 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitOrExpr(SQLGrammarParser.OrExprContext ctx){
         
-        Nodo nodoIzq = (Nodo)visit(ctx.expression(0));
-        Nodo nodoDer = (Nodo)visit(ctx.expression(1));
+        Node nodoIzq = (Node)visit(ctx.expression(0));
+        Node nodoDer = (Node)visit(ctx.expression(1));
         
         boolean cumpleNodoIzq = true;
         boolean cumpleNodoDer = true;
         
         // Nodo izquierdo            
         // Instancia de nodo operacional o literal
-        if (!(nodoIzq instanceof NodoRelacional) && !(nodoIzq instanceof NodoCondicional) && !(nodoIzq instanceof NodoDato)) {
+        if (!(nodoIzq instanceof RelationNode) && !(nodoIzq instanceof ConditionalNode) && !(nodoIzq instanceof DataNode)) {
             cumpleNodoIzq = false;
         }
         
         // Nodo derecho            
         // Instancia de nodo operacional o literal
-        if (!(nodoDer instanceof NodoRelacional) && !(nodoDer instanceof NodoCondicional) && !(nodoDer instanceof NodoDato)) {
+        if (!(nodoDer instanceof RelationNode) && !(nodoDer instanceof ConditionalNode) && !(nodoDer instanceof DataNode)) {
             cumpleNodoDer = false;
         }
         
         // Verificar que ambos cumplan para retornar
         if (cumpleNodoIzq && cumpleNodoDer){
-            Nodo nodoRetorno = new NodoCondicional(TipoOperacionCondicional.OR, nodoIzq, nodoDer);
+            Node nodoRetorno = new ConditionalNode(ConditionalOperationType.OR, nodoIzq, nodoDer);
             return nodoRetorno;
         } else{
-            throw new ExcepcionDBMS(String.format("No se puede aplicar '%s' a valores no booleanos.", "OR"));
+            throw new DBMSException(String.format("No se puede aplicar '%s' a valores no booleanos.", "OR"));
 //            ImpresorMensajes.imprimirMensajeError(String.format("No se puede aplicar '%s' a valores no booleanos.", "OR"));
 //            return null;
         } 
@@ -1216,18 +1216,18 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             
             // Verificar que exista la tabla
             if (tablaActual == null){
-                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.printErrorMessage(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
                 
                 // Obtener la lista de valores
-                HashMap<String, Expresion> mapa = (HashMap<String, Expresion>)visit(ctx.idValueList());
+                HashMap<String, Expression> mapa = (HashMap<String, Expression>)visit(ctx.idValueList());
                 
                 // Verificar que tenga un where
                 if (ctx.WHERE() != null){
                     
-                    Condicion condicion = new Condicion((Nodo)visit(ctx.expression()));
+                    Condition condicion = new Condition((Node)visit(ctx.expression()));
                     int cambios = tablaActual.actualizarFilas(mapa, condicion);
                     
                     // Imprime mensaje de cambios
@@ -1237,8 +1237,8 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                     
                 } else{ 
                     
-                    NodoLiteral nodoDummy = new NodoLiteral("true", TipoLiteral.STRING);
-                    Condicion condicion = new CondicionTrue(nodoDummy);
+                    LiteralNode nodoDummy = new LiteralNode("true", LiteralType.STRING);
+                    Condition condicion = new TrueCondition(nodoDummy);
                     int cambios = tablaActual.actualizarFilas(mapa, condicion);
                     
                     // Imprime mensaje de cambios
@@ -1251,7 +1251,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             }
             
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -1265,11 +1265,11 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitIdValueList(SQLGrammarParser.IdValueListContext ctx){
         
-        HashMap<String, Expresion> mapa = new HashMap<>();
+        HashMap<String, Expression> mapa = new HashMap<>();
         
         // Visitar id value y agregar al mapa acutal todos los elementos que retorna
         for (IdValueContext valor : ctx.idValue()){
-            mapa.putAll((HashMap<String, Expresion>)visit(valor)); 
+            mapa.putAll((HashMap<String, Expression>)visit(valor)); 
         }
         
         return mapa;
@@ -1284,8 +1284,8 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     @Override
     public Object visitIdValue(SQLGrammarParser.IdValueContext ctx){
         
-        HashMap<String, Expresion> mapa = new HashMap<>();
-        Expresion expresion = new Expresion((Nodo)visit(ctx.expression()));
+        HashMap<String, Expression> mapa = new HashMap<>();
+        Expression expresion = new Expression((Node)visit(ctx.expression()));
         mapa.put(tablaActual.obtenerNombre()+"."+ctx.ID().getText(), expresion);
         
         return mapa;
@@ -1319,22 +1319,22 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             
             // Verificar que exista la tabla
             if (tablaActual == null){
-                MessagePrinter.imprimirMensajeError(String.format("No existe la tabla %s.", ctx.ID().getText()));
+                MessagePrinter.printErrorMessage(String.format("No existe la tabla %s.", ctx.ID().getText()));
                 return false;
             } else{
                 
                 // Verificar que tenga un where
                 if (ctx.WHERE() != null){
                     
-                    Condicion condicion = new Condicion((Nodo)visit(ctx.expression()));
+                    Condition condicion = new Condition((Node)visit(ctx.expression()));
                     int cantidadEliminado = tablaActual.eliminarFilas(condicion);
                     MessagePrinter.imprimirMensajeUsuario(String.format("Se han eliminado de la tabla %s %d fila(s).",tablaActual.obtenerNombre(), cantidadEliminado));
                     return true;
                     
                 } else{
                     
-                    NodoLiteral nodoDummy = new NodoLiteral("true", TipoLiteral.STRING);
-                    Condicion condicion = new CondicionTrue(nodoDummy);
+                    LiteralNode nodoDummy = new LiteralNode("true", LiteralType.STRING);
+                    Condition condicion = new TrueCondition(nodoDummy);
                     tablaActual.eliminarFilas(condicion);
                     MessagePrinter.imprimirMensajeUsuario(String.format("Se han elminado todas las filas de la tabla %s", tablaActual.obtenerNombre()));
                     return true;
@@ -1344,7 +1344,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             }
             
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -1359,7 +1359,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
     public Object visitSelect(SQLGrammarParser.SelectContext ctx){
         
          tablaActual = null;
-         Relacion relacionFinal;
+         Relation relacionFinal;
         
         // Verificar que haya una base de datos en uso
         if (baseDatosActual != null){
@@ -1374,17 +1374,17 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             } else{
                 tablas = (ArrayList<String>)visit(ctx.idList(0));
             }
-            ArrayList<Relacion> relacionesTablas = new ArrayList<>();
+            ArrayList<Relation> relacionesTablas = new ArrayList<>();
             ArrayList<String[]> columnasTabla = new ArrayList<>();
             
-            Relacion relacionFrom = null;
-            Relacion relacionWhere = null;
+            Relation relacionFrom = null;
+            Relation relacionWhere = null;
             
             Tabla[] tablasTotales = baseDatosActual.obtenerTablas();
              
             for (String tablaActualCiclo : tablas){
                 
-                Relacion relacionTemporal = null;
+                Relation relacionTemporal = null;
                 
                 // Encontrar la tabla que se desea modificar
                 for (int i = 0; i<tablasTotales.length; i++){
@@ -1399,7 +1399,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                 }
                 
                 if (relacionTemporal == null){
-                    throw new ExcepcionTabla(ExcepcionTabla.TipoError.TablaNoExiste, tablaActualCiclo);
+                    throw new TableException(TableException.TipoError.TablaNoExiste, tablaActualCiclo);
 //                    ImpresorMensajes.imprimirMensajeError(String.format("No existe la tabla %s.", tablaActualCiclo));
 //                    return null;
                 } else{
@@ -1446,7 +1446,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             if (ctx.WHERE() != null){
                 
                 // Contruir la relación de where si existe
-                Condicion condicion = new Condicion((Nodo)visit(ctx.expression()));
+                Condition condicion = new Condition((Node)visit(ctx.expression()));
                 relacionWhere = new RelacionFiltro(relacionFrom, condicion);
                 
             } else {
@@ -1488,7 +1488,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
                 if (col.size() != columnasSelect.size()){
                     
                     
-                    MessagePrinter.imprimirMensajeError("Las columnas especificadas no existen en la relación");
+                    MessagePrinter.printErrorMessage("Las columnas especificadas no existen en la relación");
                     return false;
                     
                 }
@@ -1511,7 +1511,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             if (ctx.ORDER() != null){
                 
                 LinkedHashMap<String, TipoOrdenamiento> mapa = (LinkedHashMap<String, TipoOrdenamiento>)visit(ctx.orderList());
-                Relacion relacionOrdenamiento = new RelacionOrdenamiento(relacionFinal, mapa);
+                Relation relacionOrdenamiento = new RelacionOrdenamiento(relacionFinal, mapa);
                 MessagePrinter.imprimirRelacion(relacionOrdenamiento);
                 return true;
                 
@@ -1527,7 +1527,7 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
             
             
         } else{
-            MessagePrinter.imprimirMensajeError("No se encuentra ninguna base de datos en uso.");
+            MessagePrinter.printErrorMessage("No se encuentra ninguna base de datos en uso.");
             return false;
         }
         
@@ -1562,16 +1562,16 @@ public class VisitanteSQL extends SQLGrammarBaseVisitor<Object>{
         
         HashMap<String, TipoOrdenamiento> mapa = new HashMap<>();
         String campo;
-        Nodo nodo = (Nodo)visit(ctx.expression());
+        Node nodo = (Node)visit(ctx.expression());
         
         // Verificar que sea un campo de tabla
-        if (nodo instanceof NodoDato){
+        if (nodo instanceof DataNode){
             
-            campo = ((NodoDato)nodo).toString();
+            campo = ((DataNode)nodo).toString();
             
         } else{
             
-            throw new ExcepcionBaseDatos("Solamente se puede ordernar por medio de campos de la tabla");
+            throw new DatabaseException("Solamente se puede ordernar por medio de campos de la tabla");
             
         }
         

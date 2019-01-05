@@ -1,7 +1,7 @@
 
 package interfazUsuario;
 
-import excepciones.ExcepcionDBMS;
+import excepciones.DBMSException;
 import java.util.Collections;
 import java.util.List;
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -35,8 +35,8 @@ public class VerboseListener extends BaseErrorListener{
         List<String> stack = ((Parser)recognizer).getRuleInvocationStack();
         Collections.reverse(stack);
         
-        MessagePrinter.imprimirMensajeError(String.format("Regla %s", stack));
-        MessagePrinter.imprimirMensajeError(String.format("Linea %s: %s en %s: %s", line, charPositionInLine, offendingSymbol, msg));
+        MessagePrinter.printErrorMessage(String.format("Regla %s", stack));
+        MessagePrinter.printErrorMessage(String.format("Linea %s: %s en %s: %s", line, charPositionInLine, offendingSymbol, msg));
         
         /*
         System.err.println("rule stack: "+stack);
@@ -44,7 +44,7 @@ public class VerboseListener extends BaseErrorListener{
                            offendingSymbol+": "+msg);
         */
 
-        throw new ExcepcionDBMS("ERRORES NO RECUPERABLES");
+        throw new DBMSException("ERRORES NO RECUPERABLES");
     }
 
 }

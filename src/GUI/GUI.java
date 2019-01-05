@@ -1,13 +1,12 @@
 package GUI;
 
 
-import excepciones.ExcepcionBaseDatos;
-import excepciones.ExcepcionDBMS;
-import excepciones.ExcepcionTabla;
+import excepciones.DatabaseException;
+import excepciones.DBMSException;
+import excepciones.TableException;
 import grammar.SQLGrammarLexer;
 import grammar.SQLGrammarParser;
 import grammar.SQLGrammarVisitor;
-import interfazUsuario.Impresor;
 import interfazUsuario.MessagePrinter;
 import interfazUsuario.VerboseListener;
 import java.awt.BorderLayout;
@@ -26,16 +25,17 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.ScrollPaneConstants;
-import motor.Dato;
-import motor.TipoDato;
-import motor.relacion.Esquema;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.Data;
+import motor.DataType;
+import motor.relacion.Schema;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import visitante.VisitanteSQL;
+import visitante.SQLVisitor;
+import interfazUsuario.Printer;
 
 /**
  * Basic GUI for interacting with the DBMS.
@@ -58,32 +58,32 @@ public class GUI extends JFrame{
         this.setLocationByPlatform(true);
         this.setSize( 600, 600 );
         
-        MessagePrinter.registerPrinter( new ImpresorGUI() );
+        MessagePrinter.registerPrinter( new GUIPrinter() );
         
-        inicializarComponentes();
+        initComponents();
 //        this.pack();
     }
     
     /**
-     * Inicializa todos los componentes.
+     * Initializes all components
      */
-    private void inicializarComponentes(){
-        JPanel pnlPrincipal = new JPanel( new GridBagLayout() );
+    private void initComponents(){
+        JPanel pnlMain = new JPanel( new GridBagLayout() );
         
-        // Código de ingreso
+        // Input code
         GBC layout = new GBC(0, 0, 2, 1).setFill(GBC.BOTH).setWeight(1.0f, 0.5f);
         txtCode = new JTextArea();
-        JScrollPane scrollCodigo = new JScrollPane( txtCode );
-        scrollCodigo.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollCodigo.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JScrollPane scrollCode = new JScrollPane( txtCode );
+        scrollCode.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollCode.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         
-        scrollCodigo.setBorder(BorderFactory.createTitledBorder("Código"));
+        scrollCode.setBorder(BorderFactory.createTitledBorder("Code to Execute"));
         
-        pnlPrincipal.add(scrollCodigo, layout);
+        pnlMain.add(scrollCode, layout);
         
-        // Botón de ejecutar
+        // Execute button
         layout = new GBC(0, 1, 1, 1).setAnchor(GBC.WEST);
-        btnExecute = new JButton("Ejecutar");
+        btnExecute = new JButton("Execute");
         btnExecute.addActionListener( new ActionListener(){
 
             @Override
@@ -92,7 +92,7 @@ public class GUI extends JFrame{
             }
             
         });
-        pnlPrincipal.add(btnExecute, layout);
+        pnlMain.add(btnExecute, layout);
         
         txtCode.addKeyListener(new KeyAdapter() {
 
@@ -104,110 +104,108 @@ public class GUI extends JFrame{
             
         });
         
-        // Botón de salidas
+        // Results
         layout = new GBC(0, 2, 2, 1).setFill(GBC.BOTH).setWeight(1.0f, 0.4f);
         txtResults = new JTextPane();
         txtResults.setContentType("text/html");
         txtResults.setEditable(false);
         
-        JScrollPane panelResultados = new JScrollPane(txtResults);
-        panelResultados.setBorder(BorderFactory.createTitledBorder("Resultados"));
-        pnlPrincipal.add(panelResultados, layout);
+        JScrollPane panelResults = new JScrollPane(txtResults);
+        panelResults.setBorder(BorderFactory.createTitledBorder("Output"));
+        pnlMain.add(panelResults, layout);
         
-        // Pone el panel
+        // Add panel
         this.setLayout( new BorderLayout() );
-        this.add(pnlPrincipal, BorderLayout.CENTER );
+        this.add(pnlMain, BorderLayout.CENTER );
     }
 
     private void onButtonPress(){
-        String entrada = txtCode.getText();
+        String input = txtCode.getText();
         resultsText.setLength(0);
         txtResults.setText("");
         
         try{
             // ANTLR
-            CharStream input = CharStreams.fromString(entrada);
-            SQLGrammarLexer lexer = new SQLGrammarLexer(input);
+            CharStream inputStream = CharStreams.fromString(input);
+            SQLGrammarLexer lexer = new SQLGrammarLexer(inputStream);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SQLGrammarParser parser = new SQLGrammarParser(tokens);
 
-            // Manejo de errores
+            // Error management
             parser.removeErrorListeners();
             parser.addErrorListener(new VerboseListener());
 
-            // Ejecución de parser
-            ParseTree arbol = parser.program();
+            // Parser execution
+            ParseTree tree = parser.program();
 
-            // Visitar
-            SQLGrammarVisitor visitante = new VisitanteSQL();
-            visitante.visit(arbol);
-        } catch (ExcepcionBaseDatos excepcionBD){
-            MessagePrinter.imprimirMensajeError(excepcionBD.getMessage());
-        } catch (ExcepcionTabla excepcionTabla){
-            MessagePrinter.imprimirMensajeError(excepcionTabla.getMessage());
-        } catch( ExcepcionDBMS ex ){
-            MessagePrinter.imprimirMensajeError(ex.getMessage());
+            // Start visitor
+            SQLGrammarVisitor visitor = new SQLVisitor();
+            visitor.visit(tree);
+        } catch (DatabaseException databaseException){
+            MessagePrinter.printErrorMessage(databaseException.getMessage());
+        } catch (TableException tableException){
+            MessagePrinter.printErrorMessage(tableException.getMessage());
+        } catch( DBMSException ex ){
+            MessagePrinter.printErrorMessage(ex.getMessage());
         }
     }
 
     
     /**
-     * Impresor de mensajes
+     * Message printer
      */
-    private class ImpresorGUI implements Impresor{
+    private class GUIPrinter implements Printer{
 
         @Override
-        public void imprimirMensaje(String txtMensaje) {
-//            textoResultados.append("<p>").append(txtMensaje).append( "</p>");
-            resultsText.append(txtMensaje).append("<br/>");
+        public void printMessage(String message) {
+            resultsText.append(message).append("<br/>");
             txtResults.setText(resultsText.toString());
         }
 
         @Override
-        public void imprimirError(String txtError) {
-//            textoResultados.append( "<p><font color='red'>" + txtError + "</font></p>" );
-            resultsText.append("<font color='red'>").append(txtError).append("</font><br/>");
+        public void printError(String errorMessage) {
+            resultsText.append("<font color='red'>").append(errorMessage).append("</font><br/>");
             txtResults.setText(resultsText.toString());
         }
 
         @Override
-        public void imprimirRelacion(Relacion relacion) {
+        public void printRelation(Relation relation) {
             resultsText.append("<table border=\"1\">");
             
-            // Imprime el esquema
+            // Prints schema
             resultsText.append("<tr>");
-            Esquema esquema = relacion.obtenerEsquema();
-            TipoDato[] tipos = esquema.obtenerTipos();
-            for (int i = 0; i < esquema.obtenerTamaño(); i++) {
+            Schema schema = relation.getSchema();
+            DataType[] types = schema.getTypes();
+            for (int i = 0; i < schema.getSize(); i++) {
                 resultsText.append(String.format("<th>%s(%s)</th>", 
-                        relacion.obtenerNombreCalificado(i), tipos[i]) );
+                        relation.getQualifiedName(i), types[i]) );
             }
             resultsText.append("</tr>");
             
-            // Imprime las líneas
-            int cantidad = 0;
-            for (Fila filaActual : relacion) {
+            // Prints lines
+            int amount = 0;
+            for (Row currentRow : relation) {
                 resultsText.append("<tr>");
-                for( Dato dato: filaActual ){
-                    resultsText.append(String.format("<td>%s</td>", dato.representacion()));
+                for( Data datum: currentRow ){
+                    resultsText.append(String.format("<td>%s</td>", datum.representation()));
                 }
                 resultsText.append("</tr>");
-                ++cantidad;
+                ++amount;
             }
             
             resultsText.append("</table>");
-            resultsText.append("Se encontraron ").append(cantidad).append(" filas.</br>");
+            resultsText.append(amount).append(" rows were found.</br>");
             
             txtResults.setText(resultsText.toString());
         }
 
         @Override
-        public boolean obtenerConfirmacion(String mensaje) {
-            int resultado = 
-                    JOptionPane.showConfirmDialog(GUI.this, mensaje, "Confirmar operación",
+        public boolean getConfirmation(String message) {
+            int result = 
+                    JOptionPane.showConfirmDialog(GUI.this, message, "Confirm operation",
                     JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             
-            return resultado == JOptionPane.YES_OPTION;
+            return result == JOptionPane.YES_OPTION;
         }
         
     }

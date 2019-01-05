@@ -2,8 +2,8 @@
 package interfazUsuario;
 
 import java.util.HashMap;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 
 /**
  *
@@ -11,7 +11,7 @@ import motor.relacion.Relacion;
  */
 public class MessagePrinter {
     private static int idSiguienteImpresor = 0;
-    private static HashMap<Integer, Impresor> impresores = new HashMap<>();
+    private static HashMap<Integer, Printer> impresores = new HashMap<>();
     
     /**
      * Método estático utilizado para imprimir los mensajes del usuario
@@ -21,8 +21,8 @@ public class MessagePrinter {
         if( impresores.isEmpty() )
             System.out.println(mensaje);
         else{
-            for (Impresor impresor : impresores.values()) {
-                impresor.imprimirMensaje(mensaje);
+            for (Printer impresor : impresores.values()) {
+                impresor.printMessage(mensaje);
             }
         }
     }
@@ -31,12 +31,12 @@ public class MessagePrinter {
      * Método estático utilizado para imrpimir mensajes de error
      * @param mensaje 
      */
-    public static void imprimirMensajeError(String mensaje){
+    public static void printErrorMessage(String mensaje){
         if( impresores.isEmpty() )
             System.err.println(mensaje);
         else{
-            for (Impresor impresor : impresores.values()) {
-                impresor.imprimirError(mensaje);
+            for (Printer impresor : impresores.values()) {
+                impresor.printError(mensaje);
             }
         }
     }
@@ -45,14 +45,14 @@ public class MessagePrinter {
      * Método estático utilizado para imprimir relaciones.
      * @param relacionP 
      */
-    public static void imprimirRelacion(Relacion relacionP){
+    public static void imprimirRelacion(Relation relacionP){
         if( impresores.isEmpty() ){
-            for (Fila fila : relacionP) {
+            for (Row fila : relacionP) {
                 System.out.println(fila);
             }
         }else{
-            for (Impresor impresor : impresores.values()) {
-                impresor.imprimirRelacion(relacionP);
+            for (Printer impresor : impresores.values()) {
+                impresor.printRelation(relacionP);
             }
         }
     }
@@ -66,8 +66,8 @@ public class MessagePrinter {
         if( impresores.isEmpty() ){
             return true;
         } else {
-            for (Impresor impresor : impresores.values()) {
-                if( impresor.obtenerConfirmacion(mensaje) != true )
+            for (Printer impresor : impresores.values()) {
+                if( impresor.getConfirmation(mensaje) != true )
                     return false;
             }
             
@@ -80,7 +80,7 @@ public class MessagePrinter {
      * Permite registrar un nuevo impresor que capture todos los datos impresos.
      * @param nuevoImpresor 
      */
-    public static int registerPrinter( Impresor nuevoImpresor ){
+    public static int registerPrinter( Printer nuevoImpresor ){
         impresores.put(idSiguienteImpresor, nuevoImpresor);
         return idSiguienteImpresor++;
     }

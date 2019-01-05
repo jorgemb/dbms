@@ -1,18 +1,18 @@
 package motor.relacion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import motor.Dato;
-import motor.TipoDato;
+import motor.Data;
+import motor.DataType;
 
 /**
  * Representa una proyección (SELECT) de la relación contenida.
  * @author Jorge
  */
-public class RelacionProyeccion extends Relacion{
+public class RelacionProyeccion extends Relation{
     /** Relacion contenida */
-    private Relacion relacionContenida;
+    private Relation relacionContenida;
     private ArrayList<Integer> indicesProyeccion;
 
     /**
@@ -20,14 +20,14 @@ public class RelacionProyeccion extends Relacion{
      * dados.
      * @param nombresProyeccion Nombres calificados a tomar en cuenta.
      */
-    public RelacionProyeccion( Relacion relacionContenida, String ... nombresProyeccion ) throws ExcepcionTabla {
+    public RelacionProyeccion( Relation relacionContenida, String ... nombresProyeccion ) throws TableException {
         this.relacionContenida = relacionContenida;
         this.indicesProyeccion = new ArrayList<>();
         
         // Obtiene los nombres calificados de todas las columnas
         ArrayList<String> nombresCalificados = new ArrayList<>();
-        for (int i = 0; i < relacionContenida.obtenerEsquema().obtenerTamaño(); i++) {
-            nombresCalificados.add( relacionContenida.obtenerNombreCalificado(i) );
+        for (int i = 0; i < relacionContenida.getSchema().getSize(); i++) {
+            nombresCalificados.add( relacionContenida.getQualifiedName(i) );
         }
         
         // Obtiene los indices de cada uno de los nombres.
@@ -36,7 +36,7 @@ public class RelacionProyeccion extends Relacion{
             if( indice != -1 )
                 indicesProyeccion.add(indice);
             else
-                throw new ExcepcionTabla(ExcepcionTabla.TipoError.ColumnaNoExiste, nombreSeleccionar);
+                throw new TableException(TableException.TipoError.ColumnDoesNotExist, nombreSeleccionar);
         }
     }
     
@@ -44,15 +44,15 @@ public class RelacionProyeccion extends Relacion{
      * @return Devuelve el esquema de la relacion
      */
     @Override
-    public Esquema obtenerEsquema() {
-        TipoDato[] esquemaCompleto = relacionContenida.obtenerEsquema().obtenerTipos();
+    public Schema getSchema() {
+        DataType[] esquemaCompleto = relacionContenida.getSchema().getTypes();
         
-        ArrayList<TipoDato> esquemaActual = new ArrayList<>();
+        ArrayList<DataType> esquemaActual = new ArrayList<>();
         for (Integer indice : indicesProyeccion) {
             esquemaActual.add(esquemaCompleto[indice]);
         }
         
-        return new Esquema( esquemaActual.toArray( new TipoDato[0] ) );
+        return new Schema( esquemaActual.toArray(new DataType[0] ) );
     }
 
     /**
@@ -68,18 +68,18 @@ public class RelacionProyeccion extends Relacion{
      * Obtiene el nombre calificado de una columna en particular.
      * @param indiceColumna Indice de la columna a verificar.
      * @return String con el nombre calificado.
-     * @throws ExcepcionTabla 
+     * @throws TableException 
      */
     @Override
-    public String obtenerNombreCalificado(int indiceColumna) throws ExcepcionTabla {
-        return relacionContenida.obtenerNombreCalificado( indicesProyeccion.get(indiceColumna) );
+    public String getQualifiedName(int indiceColumna) throws TableException {
+        return relacionContenida.getQualifiedName( indicesProyeccion.get(indiceColumna) );
     }
 
     /**
      * @return Devuelve un iterador para la relacion.
      */
     @Override
-    public Iterator<Fila> iterator() {
+    public Iterator<Row> iterator() {
         return new Iterador();
     }
     
@@ -87,8 +87,8 @@ public class RelacionProyeccion extends Relacion{
     /**
      * Clase para iterar a través de la relación.
      */
-    public class Iterador implements Iterator<Fila>{
-        private Iterator<Fila> iteradorRelacion;
+    public class Iterador implements Iterator<Row>{
+        private Iterator<Row> iteradorRelacion;
 
         /**
          * Constructor de la clase.
@@ -103,12 +103,12 @@ public class RelacionProyeccion extends Relacion{
         }
 
         @Override
-        public Fila next() {
-            Fila filaCompleta = iteradorRelacion.next();
-            Dato[] datosFila = filaCompleta.obtenerDatos();
+        public Row next() {
+            Row filaCompleta = iteradorRelacion.next();
+            Data[] datosFila = filaCompleta.obtenerDatos();
             
             // Proyecta la fila
-            Dato[] datosProyectados = new Dato[indicesProyeccion.size()];
+            Data[] datosProyectados = new Data[indicesProyeccion.size()];
             for (int i = 0; i < indicesProyeccion.size(); i++) {
                 datosProyectados[i] = datosFila[indicesProyeccion.get(i)];
             }
@@ -118,7 +118,7 @@ public class RelacionProyeccion extends Relacion{
 //                datosProyectados.add( datosFila[indice] );
 //            }
             
-            return new Fila( datosProyectados );
+            return new Row( datosProyectados );
         }
 
         @Override

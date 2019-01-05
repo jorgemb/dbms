@@ -4,7 +4,7 @@ package excepciones;
  *
  * @author Jorge
  */
-public class ExcepcionTabla extends ExcepcionDBMS {
+public class TableException extends DBMSException {
     public enum TipoError{
         DatoInvalido,
         EsquemaInvalido,
@@ -13,7 +13,7 @@ public class ExcepcionTabla extends ExcepcionDBMS {
         TablaYaExiste,
         TablaNoEsValida,
         ColumnaYaExiste,
-        ColumnaNoExiste,
+        ColumnDoesNotExist,
         RestriccionYaExiste,
         RestriccionNoExiste,
         FalloRestriccion,
@@ -30,7 +30,7 @@ public class ExcepcionTabla extends ExcepcionDBMS {
      * Constructor con error fatal.
      * @param detallesError 
      */
-    public ExcepcionTabla(String detallesError) {
+    public TableException(String detallesError) {
         super(detallesError);
         this.detallesError = detallesError;
         this.tipoError = TipoError.ErrorFatal;
@@ -41,7 +41,7 @@ public class ExcepcionTabla extends ExcepcionDBMS {
      * @param tipoError
      * @param detallesError 
      */
-    public ExcepcionTabla(TipoError tipoError, String detallesError) {
+    public TableException(TipoError tipoError, String detallesError) {
         super(detallesError);
         this.tipoError = tipoError;
         this.detallesError = detallesError;
@@ -69,7 +69,7 @@ public class ExcepcionTabla extends ExcepcionDBMS {
                 return String.format("La tabla %s no es válida.", detallesError);
             case ColumnaYaExiste:
                 return String.format("Ya existe una columna con nombre: %s", detallesError);
-            case ColumnaNoExiste:
+            case ColumnDoesNotExist:
                 return String.format("No existe la columna con nombre: %s", detallesError);
             case RestriccionYaExiste:
                 return String.format("Ya existe una restricción con nombre: %s", detallesError);

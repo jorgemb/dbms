@@ -3,20 +3,20 @@ package motor.relacion;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import motor.TipoDato;
+import motor.DataType;
 
 /**
  *
  * @author Jorge
  */
-public class Esquema implements java.io.Serializable {
-    private TipoDato[] tiposEsquema;
+public class Schema implements java.io.Serializable {
+    private DataType[] tiposEsquema;
 
     /**
      * Constructor con arreglo de tipos.
      * @param tiposEsquema 
      */
-    public Esquema(TipoDato[] tiposEsquema) {
+    public Schema(DataType[] tiposEsquema) {
         this.tiposEsquema = tiposEsquema;
     }
 
@@ -40,7 +40,7 @@ public class Esquema implements java.io.Serializable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Esquema other = (Esquema) obj;
+        final Schema other = (Schema) obj;
         
         // Revisa que sean del mismo tamaño
         if( this.tiposEsquema.length != other.tiposEsquema.length )
@@ -50,8 +50,8 @@ public class Esquema implements java.io.Serializable {
         for (int i = 0; i < tiposEsquema.length; i++) {
             if( this.tiposEsquema[i] != other.tiposEsquema[i] ){
                 // Son comparables si alguno de los dos es null 
-                if( this.tiposEsquema[i] != TipoDato.NULL &&
-                        other.tiposEsquema[i] != TipoDato.NULL )
+                if( this.tiposEsquema[i] != DataType.NULL &&
+                        other.tiposEsquema[i] != DataType.NULL )
                     return false;
             }
         }
@@ -69,7 +69,7 @@ public class Esquema implements java.io.Serializable {
     @Override
     public String toString() {
         StringBuilder stringEsquema = new StringBuilder();
-        for (TipoDato tipoDato : tiposEsquema) {
+        for (DataType tipoDato : tiposEsquema) {
             // Es el primer dato
             if( stringEsquema.length() == 0 )
                 stringEsquema.append(tipoDato.name());
@@ -84,15 +84,15 @@ public class Esquema implements java.io.Serializable {
      * Devuelve los tipos asociados al esquema.
      * @return TipoDato[] con los datos.
      */
-    public TipoDato[] obtenerTipos(){
-        return (TipoDato[])tiposEsquema.clone();
+    public DataType[] getTypes(){
+        return (DataType[])tiposEsquema.clone();
     }
     
     /**
      * Devuelve el tamaño del esquema.
      * @return Cantidad de tipos.
      */
-    public int obtenerTamaño(){
+    public int getSize(){
         return tiposEsquema.length;
     }
     
@@ -102,11 +102,11 @@ public class Esquema implements java.io.Serializable {
      * @param b Segundo esquema
      * @return Nuevo esquema con la combinación.
      */
-    public static Esquema combinarEsquemas( Esquema a, Esquema b ){
-        ArrayList<TipoDato> tiposEsquema = new ArrayList<>(Arrays.asList(a.obtenerTipos()));
-        tiposEsquema.addAll(Arrays.asList(b.obtenerTipos()));
+    public static Schema combinarEsquemas( Schema a, Schema b ){
+        ArrayList<DataType> tiposEsquema = new ArrayList<>(Arrays.asList(a.getTypes()));
+        tiposEsquema.addAll(Arrays.asList(b.getTypes()));
         
-        return new Esquema( tiposEsquema.toArray( new TipoDato[0] ) );
+        return new Schema( tiposEsquema.toArray(new DataType[0] ) );
     }
     
     /**
@@ -115,9 +115,9 @@ public class Esquema implements java.io.Serializable {
      * @param tiposAgregar Tipos a agregar al final del esquema.
      * @return Nuevo esquema con los tipos dados.
      */
-    public static Esquema agregarTipo( Esquema esquema, TipoDato ... tiposAgregar ){
+    public static Schema agregarTipo( Schema esquema, DataType ... tiposAgregar ){
         // Obtiene todos los tipos referenciados 
-        Esquema esquemaTemporal = new Esquema(tiposAgregar);
+        Schema esquemaTemporal = new Schema(tiposAgregar);
         return combinarEsquemas( esquema, esquemaTemporal );
     }
     
@@ -127,11 +127,11 @@ public class Esquema implements java.io.Serializable {
      * @param indicesTiposEliminar Indices de los tipos a eliminar.
      * @return Nuevo esquema con los tipos eliminados.
      */
-    public static Esquema eliminarTipos( Esquema esquema, Integer ... indicesTiposEliminar ){
+    public static Schema eliminarTipos( Schema esquema, Integer ... indicesTiposEliminar ){
         ArrayList<Integer> listaIndicesEliminar = new ArrayList<>( Arrays.asList(indicesTiposEliminar) );
-        ArrayList<TipoDato> tiposEsquema = new ArrayList<>(Arrays.asList(esquema.obtenerTipos()));
+        ArrayList<DataType> tiposEsquema = new ArrayList<>(Arrays.asList(esquema.getTypes()));
         
-        Iterator<TipoDato> iterador = tiposEsquema.iterator();
+        Iterator<DataType> iterador = tiposEsquema.iterator();
         int indiceActual = 0;
         while( iterador.hasNext() ){
             iterador.next();
@@ -143,6 +143,6 @@ public class Esquema implements java.io.Serializable {
             ++indiceActual;
         }
         
-        return new Esquema( tiposEsquema.toArray( new TipoDato[0] ) );
+        return new Schema( tiposEsquema.toArray(new DataType[0] ) );
     }
 }

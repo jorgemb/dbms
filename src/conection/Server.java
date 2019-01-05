@@ -1,4 +1,4 @@
-package conexion;
+package conection;
 
 import interfazUsuario.ImpresorServidor;
 import java.io.BufferedReader;
@@ -14,7 +14,7 @@ import java.net.Socket;
  * Servidor básico de respuestas para queries.
  * @author Jorge
  */
-public class Servidor {
+public class Server {
     private final int puerto;
     
     private Thread thConsola;
@@ -24,14 +24,14 @@ public class Servidor {
      * Constructor con puerto.
      * @param puerto 
      */
-    public Servidor(int puerto) {
+    public Server(int puerto) {
         this.puerto = puerto;
     }
     
     /**
      * Inicia el servidor.
      */
-    public void iniciar() throws IOException{
+    public void init() throws IOException{
         // Thread para manejo de comandos directos al servidor
         thConsola = new Thread(){
             //<editor-fold defaultstate="collapsed" desc="Manejo consola">

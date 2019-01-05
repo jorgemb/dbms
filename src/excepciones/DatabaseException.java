@@ -4,7 +4,7 @@ package excepciones;
  *
  * @author Jorge
  */
-public class ExcepcionBaseDatos extends ExcepcionDBMS{
+public class DatabaseException extends DBMSException{
     public enum TipoError{
         NoExiste,
         IdentificadorInvalido,
@@ -21,7 +21,7 @@ public class ExcepcionBaseDatos extends ExcepcionDBMS{
      * @param tipoError Tipo del error generado.
      * @param nombreBaseDatos Nombre de la base de datos que generó el error.
      */
-    public ExcepcionBaseDatos(TipoError tipoError, String nombreBaseDatos) {
+    public DatabaseException(TipoError tipoError, String nombreBaseDatos) {
         super("Error en base de datos: " + nombreBaseDatos);
         this.tipoError = tipoError;
         this.nombreBaseDatos = nombreBaseDatos;
@@ -31,7 +31,7 @@ public class ExcepcionBaseDatos extends ExcepcionDBMS{
      * Constructor para un error fatal.
      * @param mensaje Mensaje a mostrar al usuario.
      */
-    public ExcepcionBaseDatos(String mensaje){
+    public DatabaseException(String mensaje){
         super(mensaje);
         this.tipoError = TipoError.ErrorFatal;
         this.mensajeErrorFatal = mensaje;

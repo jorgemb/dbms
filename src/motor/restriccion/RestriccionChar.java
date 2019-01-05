@@ -1,11 +1,11 @@
 package motor.restriccion;
 
-import excepciones.ExcepcionTabla;
+import excepciones.TableException;
 import java.util.ArrayList;
-import motor.Dato;
-import motor.TipoDato;
-import motor.relacion.Fila;
-import motor.relacion.Relacion;
+import motor.Data;
+import motor.DataType;
+import motor.relacion.Row;
+import motor.relacion.Relation;
 
 /**
  *
@@ -30,24 +30,24 @@ public class RestriccionChar extends Restriccion{
      * @param relacion Relación de donde salen los campos.
      * @param filaVerificar Fila a verificar. 
      */
-    public void evaluarRestriccion( Relacion relacion, Fila filaVerificar ) throws ExcepcionTabla{
+    public void evaluarRestriccion( Relation relacion, Row filaVerificar ) throws TableException{
         // Obtiene el esquema y los indices
         ArrayList<String> nombreColumnas = relacion.obtenerTodosNombreCalificados();
         
         // Obtiene el índice de la columna referenciada
         int indiceColumna = nombreColumnas.indexOf( nombreCampo );
         if( indiceColumna == -1 )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.ColumnaNoExiste, nombreCampo);
+            throw new TableException(TableException.TipoError.ColumnDoesNotExist, nombreCampo);
         
         
-        Dato datoVerificar = filaVerificar.obtenerDato(indiceColumna);
-        if( datoVerificar.obtenerTipo() != TipoDato.CHAR )
-            throw new ExcepcionTabla("No se puede aplicar una restricción CHAR a un dato de tipo " 
+        Data datoVerificar = filaVerificar.getDatum(indiceColumna);
+        if( datoVerificar.obtenerTipo() != DataType.CHAR )
+            throw new TableException("No se puede aplicar una restricción CHAR a un dato de tipo " 
                     + datoVerificar.obtenerTipo().name());
         
-        String strDato = (String)datoVerificar.obtenerValor();
+        String strDato = (String)datoVerificar.getValue();
         if( strDato.length() > cantidadCaracteres )
-            throw new ExcepcionTabla(ExcepcionTabla.TipoError.FalloRestriccion, 
+            throw new TableException(TableException.TipoError.FalloRestriccion, 
                     String.format( "No se puede asignar un string de tamaño %d a un dato de tipo CHAR(%d).",
                     strDato.length(), cantidadCaracteres) );
     }
@@ -56,8 +56,8 @@ public class RestriccionChar extends Restriccion{
      * Evalúa la restricción en una relación completa.
      * @param relacion Relación a evaluar.
      */
-    public void evaluarRestriccion( Relacion relacion ){
-        for (Fila filaActual : relacion) {
+    public void evaluarRestriccion( Relation relacion ){
+        for (Row filaActual : relacion) {
             evaluarRestriccion( relacion, filaActual );
         }
     }
@@ -76,7 +76,7 @@ public class RestriccionChar extends Restriccion{
      */
     @Override
     public void cambiarNombreTabla(String nuevoNombre) {
-        String campo = motor.Util.obtenerNombreCampo(nombreCampo);
+        String campo = motor.Util.getFieldName(nombreCampo);
         nombreCampo = motor.Util.obtenerNombreCalificado(nuevoNombre, campo);
     }
     
