@@ -1,6 +1,6 @@
 package motor;
 
-import motor.restriccion.Restriction;
+import motor.restriction.Restriction;
 import condition.Condition;
 import condition.ConditionEvaluator;
 import condition.ExpressionEvaluator;
@@ -20,14 +20,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import motor.relacion.Schema;
-import motor.relacion.Row;
-import motor.relacion.Relation;
-import motor.relacion.TemporaryRowRelation;
-import motor.relacion.LeafRelation;
-import motor.restriccion.RestriccionChar;
-import motor.restriccion.CheckRestriction;
-import motor.restriccion.PrimaryKeyRestriction;
+import motor.relation.Schema;
+import motor.relation.Row;
+import motor.relation.Relation;
+import motor.relation.TemporaryRowRelation;
+import motor.relation.LeafRelation;
+import motor.restriction.CharRestriction;
+import motor.restriction.CheckRestriction;
+import motor.restriction.PrimaryKeyRestriction;
 
 /**
  * Represents single table in the database.
@@ -189,8 +189,8 @@ public class Table {
 		}
 		for (Iterator<String> it = restrictions.keySet().iterator(); it.hasNext();) {
 			Restriction currentRestriction = restrictions.get(it.next());
-			if (currentRestriction instanceof RestriccionChar) {
-				RestriccionChar charRestriction = (RestriccionChar) currentRestriction;
+			if (currentRestriction instanceof CharRestriction) {
+				CharRestriction charRestriction = (CharRestriction) currentRestriction;
 
 				if (charRestriction.getReferencedField().equals(columnQualifiedName)) {
 					it.remove();
@@ -412,9 +412,9 @@ public class Table {
 			// CHECK
 			((CheckRestriction) restriction).evaluateRestriction(testedRelation);
 
-		} else if (restriction instanceof RestriccionChar) {
+		} else if (restriction instanceof CharRestriction) {
 			// CHAR
-			((RestriccionChar) restriction).evaluateRestriction(testedRelation);
+			((CharRestriction) restriction).evaluateRestriction(testedRelation);
 
 		} else {
 			throw new UnsupportedOperationException();
@@ -452,9 +452,9 @@ public class Table {
 				// CHECK
 				((CheckRestriction) currentRestriction).evaluateRestriction(data, row);
 
-			} else if (currentRestriction instanceof RestriccionChar) {
+			} else if (currentRestriction instanceof CharRestriction) {
 				// CHAR
-				((RestriccionChar) currentRestriction).evaluateRestriction(data, row);
+				((CharRestriction) currentRestriction).evaluateRestriction(data, row);
 
 			} else {
 				// TODO

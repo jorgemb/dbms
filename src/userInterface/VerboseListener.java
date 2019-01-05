@@ -11,13 +11,13 @@ import org.antlr.v4.runtime.Recognizer;
 
 
 /**
- *
+ * Prints ANTLR error messages.
  * @author eddycastro
  */
 public class VerboseListener extends BaseErrorListener{
     
     /**
-     * Método que imprime mensajes de error de ANTLR
+	 * Prints a syntax error message from ANTLR.
      * @param recognizer
      * @param offendingSymbol
      * @param line
@@ -35,16 +35,10 @@ public class VerboseListener extends BaseErrorListener{
         List<String> stack = ((Parser)recognizer).getRuleInvocationStack();
         Collections.reverse(stack);
         
-        MessagePrinter.printErrorMessage(String.format("Regla %s", stack));
-        MessagePrinter.printErrorMessage(String.format("Linea %s: %s en %s: %s", line, charPositionInLine, offendingSymbol, msg));
+        MessagePrinter.printErrorMessage(String.format("Rule %s", stack));
+        MessagePrinter.printErrorMessage(String.format("Line %s: %s en %s: %s", line, charPositionInLine, offendingSymbol, msg));
         
-        /*
-        System.err.println("rule stack: "+stack);
-        System.err.println("line "+line+":"+charPositionInLine+" at "+
-                           offendingSymbol+": "+msg);
-        */
-
-        throw new DBMSException("ERRORES NO RECUPERABLES");
+        throw new DBMSException("NON RECUPERABLE ERRORS");
     }
 
 }

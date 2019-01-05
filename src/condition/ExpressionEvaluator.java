@@ -4,8 +4,8 @@ import exceptions.TableException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import motor.Data;
-import motor.relacion.Row;
-import motor.relacion.Relation;
+import motor.relation.Row;
+import motor.relation.Relation;
 
 /**
  * Evaluates a compound expression.

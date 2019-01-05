@@ -17,15 +17,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import motor.relacion.Row;
-import motor.relacion.Relation;
-import motor.relacion.RelacionFiltro;
-import motor.relacion.RelacionOrdenamiento;
-import motor.relacion.RelacionProductoCruz;
-import motor.relacion.RelacionProyeccion;
-import motor.restriccion.RestriccionChar;
-import motor.restriccion.CheckRestriction;
-import motor.restriccion.PrimaryKeyRestriction;
+import motor.relation.Row;
+import motor.relation.Relation;
+import motor.relation.FilteredRelation;
+import motor.relation.OrderedRelation;
+import motor.relation.CrossProductRelation;
+import motor.relation.ProjectedRelation;
+import motor.restriction.CharRestriction;
+import motor.restriction.CheckRestriction;
+import motor.restriction.PrimaryKeyRestriction;
 import org.apache.commons.io.FileUtils;
 
 /**

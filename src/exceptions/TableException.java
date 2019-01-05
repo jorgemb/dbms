@@ -8,7 +8,7 @@ public class TableException extends DBMSException {
     public enum ErrorType{
         DatoInvalido,
         InvalidSchema,
-        EsquemaNoCoincide,
+        SchemaDoesNotMatch,
         TableDoesNotExist,
         TableAlreadyExists,
         TablaNoEsValida,
@@ -16,8 +16,8 @@ public class TableException extends DBMSException {
         ColumnDoesNotExist,
         RestrictionAlreadyExists,
         RestriccionNoExiste,
-        FalloRestriccion,
-        RestriccionErrorEnParametros,
+        RestrictionFailure,
+        ErrorInRestrictionParameters,
         ReferenceError,
         ErrorFatal
     }

@@ -7,62 +7,62 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import motor.Data;
-import motor.relacion.Row;
-import motor.relacion.Relation;
+import motor.relation.Row;
+import motor.relation.Relation;
 
 /**
- * Permite imprimir los mensajes de salida de queries a la consola.
+ * Allows to print message to a console.
  * @author Jorge
  */
 public class ServerPrinter implements Printer, Closeable{
-    private int idImpresor;
-    private BufferedWriter salida;
+    private int printerId;
+    private BufferedWriter output;
     
     /**
-     * Registra el impresor de mensajes.
+	 * Registers the printer.
      */
-    public ServerPrinter( BufferedWriter salida ) {
-        idImpresor = MessagePrinter.registerPrinter(this);
-        this.salida = salida;
+    public ServerPrinter( BufferedWriter output ) {
+        printerId = MessagePrinter.registerPrinter(this);
+        this.output = output;
     }
 
     /**
-     * Elimina el impresor de mensajes.
+	 * Removes printer
      * @throws IOException 
      */
     @Override
     public void close() throws IOException {
-        MessagePrinter.eliminarImpresor(idImpresor);
+        MessagePrinter.deletePrinter(printerId);
     }
     
     
     
-    public final static String CAMPO_ERROR = "Error";
-    public final static String CAMPO_TIPO = "Tipo";
-    public final static String CAMPO_CONTENIDO = "Contenido";
+    public final static String FIELD_ERROR = "Error";
+    public final static String FIELD_TYPE = "Type";
+    public final static String FIELD_CONTENT = "Content";
     
-    public final static String CAMPO_ESQUEMA = "Esquema";
-    public final static String CAMPO_TIPOS = "Tipos";
-    public final static String CAMPO_NOMBRES = "Nombres";
-    public final static String CAMPO_DATOS = "Datos";
+    public final static String FIELD_SCHEMA = "Schema";
+    public final static String FIELD_TYPES = "Types";
+    public final static String FIELD_NAMES = "Names";
+    public final static String FIELD_DATA = "Data";
     
 
-    public final static String TIPO_MENSAJE = "Mensaje";
-    public final static String TIPO_RELACION = "Relacion";
+    public final static String TYPE_MESSAGE = "Message";
+    public final static String TYPE_RELATION = "Relation";
     
     @Override
-    public void printMessage(String txtMensaje) {
+    public void printMessage(String message) {
         try {
             // Crea un nuevo JSON
             JsonObject jsonMensaje = new JsonObject();
-            jsonMensaje.addProperty( CAMPO_ERROR, false );
-            jsonMensaje.addProperty( CAMPO_TIPO, TIPO_MENSAJE );
-            jsonMensaje.addProperty( CAMPO_CONTENIDO, txtMensaje );
+            jsonMensaje.addProperty(FIELD_ERROR, false );
+            jsonMensaje.addProperty(FIELD_TYPE, TYPE_MESSAGE );
+            jsonMensaje.addProperty(FIELD_CONTENT, message );
             
-            salida.append(jsonMensaje.toString());
-            salida.newLine();
+            output.append(jsonMensaje.toString());
+            output.newLine();
         } catch (IOException ex) {
-            System.err.println( "ERROR IMPRESOR: " + ex.getMessage() );
+            System.err.println( "ERROR PRINTER: " + ex.getMessage() );
         }
     }
 
@@ -71,14 +71,14 @@ public class ServerPrinter implements Printer, Closeable{
         try {
             // Crea un nuevo JSON
             JsonObject jsonError = new JsonObject();
-            jsonError.addProperty( CAMPO_ERROR, true );
-            jsonError.addProperty( CAMPO_TIPO, TIPO_MENSAJE );
-            jsonError.addProperty( CAMPO_CONTENIDO, txtError );
+            jsonError.addProperty(FIELD_ERROR, true );
+            jsonError.addProperty(FIELD_TYPE, TYPE_MESSAGE );
+            jsonError.addProperty(FIELD_CONTENT, txtError );
             
-            salida.append(jsonError.toString());
-            salida.newLine();
+            output.append(jsonError.toString());
+            output.newLine();
         } catch (IOException ex) {
-            System.err.println( "ERROR IMPRESOR: " + ex.getMessage() );
+            System.err.println( "ERROR PRINTER: " + ex.getMessage() );
         }
     }
 
@@ -86,50 +86,49 @@ public class ServerPrinter implements Printer, Closeable{
     public void printRelation(Relation relacion) {
         Gson gson = new Gson();
         try{
-            // Construye poco a poco el json correspondiente
-            salida.append("{");
-            salida.append( String.format("\"%s\": false,", CAMPO_ERROR) );
-            salida.newLine();
-            salida.append( String.format("\"%s\": \"%s\",", CAMPO_TIPO, TIPO_RELACION) );
-            salida.newLine();
+			// Builds the output json
+            output.append("{");
+            output.append(String.format("\"%s\": false,", FIELD_ERROR) );
+            output.newLine();
+            output.append(String.format("\"%s\": \"%s\",", FIELD_TYPE, TYPE_RELATION) );
+            output.newLine();
             
-            // Ingresa los datos del esquema
-            salida.append( String.format("\"%s\":{", CAMPO_ESQUEMA ) );
-            salida.append( String.format("\"%s\":%s,", CAMPO_NOMBRES,
-                    gson.toJson(relacion.obtenerTodosNombreCalificados())));
-            salida.append( String.format("\"%s\":%s},", CAMPO_TIPOS, 
+			// Schema
+            output.append(String.format("\"%s\":{", FIELD_SCHEMA ) );
+            output.append(String.format("\"%s\":%s,", FIELD_NAMES,
+                    gson.toJson(relacion.getAllQualifiedNames())));
+            output.append(String.format("\"%s\":%s},", FIELD_TYPES, 
                     gson.toJson( relacion.getSchema().getTypes() )));
-            salida.newLine();
+            output.newLine();
             
-            // Ingresa los datos de la relación
-            salida.append( String.format("\"%s\":[", CAMPO_DATOS) );
+			// Relation data
+            output.append(String.format("\"%s\":[", FIELD_DATA) );
             
-            boolean primero = true;
-            for (Row fila : relacion) {
-                // Verifica si es la primera fila
-                if( !primero ){
-                    salida.append(",");
-                    salida.newLine();
+            boolean first = true;
+            for (Row row : relacion) {
+                if( !first ){
+                    output.append(",");
+                    output.newLine();
                 } else 
-                    primero = false;
+                    first = false;
                 
-                // Imprime la fila
+				// Prints the row
                 ArrayList<Object> datos = new ArrayList<>();
-                for (Data dato : fila.getData()) {
+                for (Data dato : row.getData()) {
                     datos.add(dato.getValue());
                 }
-                salida.append( gson.toJson(datos) );
+                output.append( gson.toJson(datos) );
             }
             
-            // Finaliza
-            salida.append("]}");
+            // end
+            output.append("]}");
         } catch (IOException ex) {
-            System.err.println( "ERROR IMPRESOR: " + ex.getMessage() );
+            System.err.println( "ERROR PRINTER: " + ex.getMessage() );
         }
     }
 
     @Override
-    public boolean getConfirmation(String mensaje) {
+    public boolean getConfirmation(String message) {
         // TODO
         return true;
     }

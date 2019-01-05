@@ -97,7 +97,7 @@ public class RelationNode implements Node, java.io.Serializable {
 			Data datoIzq = new Data(left);
 			Data datoDer = new Data(right);
 
-			if (datoIzq.obtenerTipo() == DataType.DATE && datoDer.obtenerTipo() == DataType.DATE) {
+			if (datoIzq.getTypes() == DataType.DATE && datoDer.getTypes() == DataType.DATE) {
 				Date leftDate = Data.getDate(datoIzq);
 				Date rightDate = Data.getDate(datoDer);
 				return evaluateOperation(leftDate, rightDate);

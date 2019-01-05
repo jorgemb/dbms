@@ -37,7 +37,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
             this.valor = ((Number)valor).floatValue();
         
         // Verifica errores
-        this.tipo = obtenerTipo();
+        this.tipo = getTypes();
     }
 
     /**
@@ -63,7 +63,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
      * @return Obtiene el tipo del dato. Si el tipo de datos es inválido
      * entonces devuelve null.
      */
-    public final DataType obtenerTipo() throws TableException {
+    public final DataType getTypes() throws TableException {
         // Verifica si ya se tiene el tipo del dato guardado
         if( tipo != null )
             return tipo;
@@ -98,7 +98,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
 
     @Override
     public String toString() {
-        return "Dato{" + "valor=" + valor + " tipo=" + obtenerTipo().name() + '}';
+        return "Dato{" + "valor=" + valor + " tipo=" + getTypes().name() + '}';
     }
     
     /**
@@ -106,7 +106,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
      * @return 
      */
     public String representation(){
-        switch (obtenerTipo()) {
+        switch (getTypes()) {
             case INT:
                 return Integer.toString((Integer)valor);
             case FLOAT:
@@ -151,7 +151,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
      * @return 
      */
     public static Date getDate( Data dato ){
-        if( dato.obtenerTipo() != DataType.DATE )
+        if( dato.getTypes() != DataType.DATE )
             throw new TableException(TableException.ErrorType.DatoInvalido, "No se puede convertir el dato a fecha.");
         try {
             Date d = formatoFecha.parse((String)dato.valor);
@@ -200,8 +200,8 @@ public class Data implements java.io.Serializable, Comparable<Data>{
      */
     @Override
     public int compareTo(Data t) {
-            DataType tipoIzq = this.obtenerTipo();
-	    DataType tipoDer = t.obtenerTipo();
+            DataType tipoIzq = this.getTypes();
+	    DataType tipoDer = t.getTypes();
         
         // Verifica el caso null
         if( tipoIzq == NULL || tipoDer == NULL ){
@@ -242,9 +242,9 @@ public class Data implements java.io.Serializable, Comparable<Data>{
      * @return Nuevo Dato
      * @throws TableException Si la conversión no es posible.
      */
-    public Data convertirA( DataType tipoConvertir ) throws TableException{
+    public Data convertTo( DataType tipoConvertir ) throws TableException{
         // Verifica si tienen el mismo tipo
-        if( this.obtenerTipo() == tipoConvertir )
+        if( this.getTypes() == tipoConvertir )
             return new Data( this.valor );
         
         // Verifica si el destino es NULL
@@ -252,7 +252,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
             return new Data(null);
         
         // Verifica si el actual es NULL
-        if( this.obtenerTipo() == NULL )
+        if( this.getTypes() == NULL )
             throw new TableException(TableException.ErrorType.DatoInvalido, 
                     "No se puede convertir el dato de NULL a " + tipoConvertir.name());
         
@@ -262,7 +262,7 @@ public class Data implements java.io.Serializable, Comparable<Data>{
         
         // Conversión de CHAR a otro
         try {
-            if (this.obtenerTipo() == CHAR) {
+            if (this.getTypes() == CHAR) {
                 switch (tipoConvertir) {
                     case INT:
                         return new Data(Integer.parseInt((String) this.valor));
@@ -279,18 +279,18 @@ public class Data implements java.io.Serializable, Comparable<Data>{
         }
         
         // Convertir de INT a otro
-        if( this.obtenerTipo() == INT && tipoConvertir == FLOAT ){
+        if( this.getTypes() == INT && tipoConvertir == FLOAT ){
             return new Data ( ((Number)this.valor).floatValue(), FLOAT );
         }
         
         // Convertir FLOAT a otro
-        if( this.obtenerTipo() == FLOAT && tipoConvertir == INT ){
+        if( this.getTypes() == FLOAT && tipoConvertir == INT ){
             return new Data( ((Number)this.valor).intValue(), INT );
         }
         
         // CONVERSIÓN NO SOPORTADA
         throw new TableException(TableException.ErrorType.DatoInvalido,
                 String.format("No se puede convertir el dato de %s a %s.", 
-                this.obtenerTipo().name(), tipoConvertir.name()));
+                this.getTypes().name(), tipoConvertir.name()));
     }
 }
