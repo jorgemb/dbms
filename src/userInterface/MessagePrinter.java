@@ -49,7 +49,7 @@ public class MessagePrinter {
 	 *
 	 * @param relation Relation to print
 	 */
-	public static void imprimirRelacion(Relation relation) {
+	public static void printRelation(Relation relation) {
 		if (printers.isEmpty()) {
 			for (Row row : relation) {
 				System.out.println(row);
