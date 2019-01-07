@@ -769,7 +769,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object> {
 		// Literal node instance
 		if (rightNode instanceof LiteralNode) {
 
-		// Operation node instance
+			// Operation node instance
 		} else if (!(rightNode instanceof OperationNode) && !(rightNode instanceof DataNode)) {
 			rightNodeOK = false;
 		}

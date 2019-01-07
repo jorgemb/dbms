@@ -2,22 +2,24 @@ package JSON;
 
 /**
  * Simple message structure
+ *
  * @author Jorge
  */
 public class Message {
-    private boolean Error;
-    private String Type;
-    private String Content;
 
-    public boolean isError() {
-        return Error;
-    }
+	private boolean Error;
+	private String Type;
+	private String Content;
 
-    public String getType() {
-        return Type;
-    }
+	public boolean isError() {
+		return Error;
+	}
 
-    public String getContent() {
-        return Content;
-    }
+	public String getType() {
+		return Type;
+	}
+
+	public String getContent() {
+		return Content;
+	}
 }

@@ -24,6 +24,7 @@ public class ConditionalNode implements Node, java.io.Serializable {
 
 	/**
 	 * Constructor for any type of operation except NOT
+	 *
 	 * @param type Operation type
 	 * @param leftChild Left node
 	 * @param rightChild Right node

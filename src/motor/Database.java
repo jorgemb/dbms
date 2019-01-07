@@ -145,11 +145,12 @@ public class Database {
 		try {
 			database = findDatabase(name);
 		} catch (DatabaseException databaseException) {
-			if (databaseException.getErrorType() == DatabaseException.ErrorType.NonExistent )
-				// Nothing to delete
+			if (databaseException.getErrorType() == DatabaseException.ErrorType.NonExistent) // Nothing to delete
+			{
 				return;
-			else
+			} else {
 				throw databaseException;
+			}
 		}
 
 		// Eliminates every file in the directory
@@ -164,6 +165,7 @@ public class Database {
 
 	/**
 	 * Returns the name of the existent databases
+	 *
 	 * @return Array with names
 	 */
 	public static ArrayList<String> getDatabaseNames() throws DatabaseException {
@@ -183,8 +185,9 @@ public class Database {
 	}
 
 	/**
-	 * Renames a database. Note that this changes the file system name.
-	 * Every instance of the database is invalidated after this call.
+	 * Renames a database. Note that this changes the file system name. Every
+	 * instance of the database is invalidated after this call.
+	 *
 	 * @param currentName Current name of the database
 	 * @param newName New name of the database
 	 * @throws DatabaseException
