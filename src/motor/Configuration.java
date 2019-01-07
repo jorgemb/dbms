@@ -5,116 +5,105 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import userInterface.MessagePrinter;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 
 /**
- * Guarda la configuración inicial de todo el proyecto.
+ * Saves the initial configuration of every project
  *
  * @author Jorge
  */
 public class Configuration {
-	// Llaves para obtener datos globales.
 
-	public static final String DIRECTORY_DATABASE = "DIRECTORIO_BASE_DATOS";
+	// Keys for global data
+	public static final String DIRECTORY_DATABASE = "DATABASE_DIRECTORY";
 
 	/**
-	 * Instancia del singleton.
+	 * Singleton instance
 	 */
 	private static Configuration singleton;
-	private static final String nombreArchivo = "Config.ini";
+	private static final String filename = "config.ini";
 
 	/**
-	 * Constructor estático.
+	 * Static constructor
 	 */
 	static {
 		singleton = new Configuration();
 
-		// Lee los datos del archivo de configuración
+		// Reads data in configuration file
 		try {
 			Gson gson = new Gson();
-			String datosJson = FileUtils.readFileToString(new File(nombreArchivo), Charset.forName("UTF-8"));
+			String jsonData = FileUtils.readFileToString(new File(filename), Charset.forName("UTF-8"));
 
-			java.lang.reflect.Type tipoDatos = new TypeToken<HashMap<String, String>>() {
+			java.lang.reflect.Type dataType = new TypeToken<HashMap<String, String>>() {
 			}.getType();
-			singleton.datos = (HashMap<String, String>) gson.fromJson(datosJson, tipoDatos);
+			singleton.data = (HashMap<String, String>) gson.fromJson(jsonData, dataType);
 
 		} catch (IOException | JsonIOException | JsonSyntaxException ex) {
-			// Crea los datos con las versiones default
-			singleton.datos = new HashMap<>();
+			// Creates the ini file with default values
+			singleton.data = new HashMap<>();
 
-			// Agrega todas las llaves
+			// Adds all keys
 			File directorioTrabajo = new File(System.getProperty("user.dir"));
 
-			/* DIRECTORIO BASE DATOS */
-			File directorioBaseDatos = new File(directorioTrabajo, "DatosDBMS");
-			singleton.datos.put(DIRECTORY_DATABASE, directorioBaseDatos.getAbsolutePath());
-			singleton.guardarCambios();
+			/* Database directory */
+			File directorioBaseDatos = new File(directorioTrabajo, "DBMSData");
+			singleton.data.put(DIRECTORY_DATABASE, directorioBaseDatos.getAbsolutePath());
+			singleton.saveChanges();
 		}
 	}
 
 	/**
-	 * Agrega un dato a la configuración.
+	 * Adds a value to the configuration
 	 *
-	 * @param llave Llave con el cual se puede encontrar el dato.
-	 * @param dato Dato string a guardar.
+	 * @param key Key to find the data
+	 * @param value Value to store
 	 */
-	public static void agregarDato(String llave, String dato) {
-		singleton.datos.put(llave, dato);
-		singleton.guardarCambios();
+	public static void addValue(String key, String value) {
+		singleton.data.put(key, value);
+		singleton.saveChanges();
 	}
 
 	/**
-	 * Devuelve el dato asociado a una llave.
+	 * Returns value associated to a key
 	 *
-	 * @param llave Llave a consultar.
-	 * @return String con el dato, o null si existe la llave.
+	 * @param key Key to retrieve
+	 * @return String string with the value, or null
 	 */
-	public static String getDatum(String llave) {
-		if (singleton.datos.containsKey(llave)) {
-			return singleton.datos.get(llave);
+	public static String getValue(String key) {
+		if (singleton.data.containsKey(key)) {
+			return singleton.data.get(key);
 		} else {
 			return null;
 		}
 	}
 
 	/**
-	 * Guarda los cambios realizados.
+	 * Saves changes
 	 */
-	private boolean guardarCambios() {
+	private boolean saveChanges() {
 		Gson gson = new Gson();
 
 		try {
-			String datosJson = gson.toJson(datos);
-			FileUtils.writeStringToFile(new File(nombreArchivo), datosJson);
+			String jsonData = gson.toJson(data);
+			FileUtils.writeStringToFile(new File(filename), jsonData);
 
 		} catch (IOException iOException) {
-			MessagePrinter.printErrorMessage("Error guardar configuración: " + iOException.getMessage());
+			MessagePrinter.printErrorMessage("Error while saving configuration: " + iOException.getMessage());
 			return false;
 		}
 		return true;
 	}
 
 	/**
-	 * Datos almacenados.
+	 * Saved data
 	 */
-	private HashMap<String, String> datos;
+	private HashMap<String, String> data;
 
-	/**
-	 * Constructor marcado privado para mantener el singleton.
-	 */
 	private Configuration() {
-		this.datos = new HashMap<>();
+		this.data = new HashMap<>();
 	}
-
 }

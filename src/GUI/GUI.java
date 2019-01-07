@@ -54,7 +54,7 @@ public class GUI extends JFrame {
 	 * @throws HeadlessException
 	 */
 	public GUI() throws HeadlessException {
-		super("DBMS");
+		super("Database Management System - Client");
 
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setLocationByPlatform(true);

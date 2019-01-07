@@ -97,7 +97,7 @@ public class OperationNode implements Node, java.io.Serializable {
 
 		// Check for null
 		if (left == null || right == null) {
-			throw new TableException(TableException.ErrorType.DatoInvalido,
+			throw new TableException(TableException.ErrorType.InvalidData,
 				"NULL values cannot be operated.");
 		}
 

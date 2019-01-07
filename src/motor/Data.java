@@ -12,92 +12,84 @@ import static motor.DataType.INT;
 import static motor.DataType.NULL;
 
 /**
+ * Represents any value
  *
  * @author Jorge
  */
 public class Data implements java.io.Serializable, Comparable<Data> {
 
-	private Object valor;
-	private DataType tipo;
+	private Object value;
+	private DataType type;
 
 	/**
-	 * Define el formato de las fechas
+	 * Defines date format
 	 */
-	private static SimpleDateFormat formatoFecha = new SimpleDateFormat("dd-MM-yyyy");
+	private static SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
 
 	static {
-		formatoFecha.setLenient(false);
+		dateFormat.setLenient(false);
 	}
 
 	/**
-	 * Constructo de la clase
+	 * Constructor
 	 *
-	 * @param valor Valor almacenado
+	 * @param value Saved value
 	 */
-	public Data(Object valor) {
-		this.valor = valor;
+	public Data(Object value) {
+		this.value = value;
 
-		// Verifica el caso especial de double vs float
-		if (valor instanceof Double) {
-			this.valor = ((Number) valor).floatValue();
+		// Verifies special case double vs float
+		if (value instanceof Double) {
+			this.value = ((Number) value).floatValue();
 		}
 
-		// Verifica errores
-		this.tipo = getTypes();
+		this.type = getTypes();
 	}
 
 	/**
-	 * Constructor que permite forzar un tipo de dato.
+	 * Constructor with cast
 	 *
-	 * @param valor
-	 * @param tipoForzado
+	 * @param value
+	 * @param expectedType
 	 */
-	Data(Object valor, DataType tipoForzado) {
-		this.valor = valor;
-		this.tipo = tipoForzado;
+	Data(Object value, DataType expectedType) {
+		this.value = value;
+		this.type = expectedType;
 	}
 
-	/**
-	 *
-	 * @return Valor almacenado de Dato
-	 */
 	public Object getValue() {
-		return valor;
+		return value;
 	}
 
-	/**
-	 * @return Obtiene el tipo del dato. Si el tipo de datos es inválido
-	 * entonces devuelve null.
-	 */
 	public final DataType getTypes() throws TableException {
-		// Verifica si ya se tiene el tipo del dato guardado
-		if (tipo != null) {
-			return tipo;
+		// Checks if type has already been determined
+		if (type != null) {
+			return type;
 		}
 
-		// Determina el tipo del dato
-		if (valor == null) {
+		// Determines data type
+		if (value == null) {
 			return DataType.NULL;
 		}
 
-		if (valor instanceof Integer) {
+		if (value instanceof Integer) {
 			return DataType.INT;
-		} else if (valor instanceof Float || valor instanceof Double) {
+		} else if (value instanceof Float || value instanceof Double) {
 			return DataType.FLOAT;
-		} else if (valor instanceof String) {
+		} else if (value instanceof String) {
 			try {
-				String szValor = (String) valor;
-				int guiones = szValor.length() - szValor.replace("-", "").length();
-				if (guiones == 2) {
-					formatoFecha.parse((String) valor);
+				String stringValue = (String) value;
+				int dashes = stringValue.length() - stringValue.replace("-", "").length();
+				if (dashes == 2) {
+					dateFormat.parse((String) value);
 					return DataType.DATE;
 				} else {
 					return DataType.CHAR;
 				}
 			} catch (ParseException ex) {
-				throw new TableException(TableException.ErrorType.DatoInvalido,
-					String.format("La fecha %s no posee un formato válido (%s).",
-						valor, ex.getMessage()));
+				throw new TableException(TableException.ErrorType.InvalidData,
+					String.format("Invalid format for date %s (%s)..",
+						value, ex.getMessage()));
 			}
 		} else {
 			return null;
@@ -106,24 +98,22 @@ public class Data implements java.io.Serializable, Comparable<Data> {
 
 	@Override
 	public String toString() {
-		return "Dato{" + "valor=" + valor + " tipo=" + getTypes().name() + '}';
+		return "Datum{" + "value=" + value + " type=" + getTypes().name() + '}';
 	}
 
 	/**
-	 * Devuelve la representación del dato para el usuario.
-	 *
-	 * @return
+	 * String representation
 	 */
 	public String representation() {
 		switch (getTypes()) {
 			case INT:
-				return Integer.toString((Integer) valor);
+				return Integer.toString((Integer) value);
 			case FLOAT:
-				return Float.toString((Float) valor);
+				return Float.toString((Float) value);
 			case CHAR:
-				return String.format("\'%s\'", valor);
+				return String.format("\'%s\'", value);
 			case DATE:
-				return String.format("f\'%s\'", valor);
+				return String.format("f\'%s\'", value);
 			case NULL:
 				return "NULL";
 			default:
@@ -132,13 +122,13 @@ public class Data implements java.io.Serializable, Comparable<Data> {
 	}
 
 	/**
-	 * Devuelve el valor dado por defecto de un tipo.
+	 * Returns default value for type.
 	 *
-	 * @param tipo Tipo de dato.
+	 * @param type Data type
 	 * @return
 	 */
-	public static Data getDefaultValue(DataType tipo) {
-		switch (tipo) {
+	public static Data getDefaultValue(DataType type) {
+		switch (type) {
 			case INT:
 				return new Data(new Integer(0), INT);
 			case FLOAT:
@@ -146,7 +136,7 @@ public class Data implements java.io.Serializable, Comparable<Data> {
 			case CHAR:
 				return new Data("", CHAR);
 			case DATE:
-				return new Data("1-1-1970", DATE);  // FECHA POR DEFECTO
+				return new Data("1-1-1970", DATE);  // Default date
 			case NULL:
 				return new Data(null, NULL);
 			default:
@@ -155,36 +145,30 @@ public class Data implements java.io.Serializable, Comparable<Data> {
 	}
 
 	/**
-	 * Devuelve la fecha dada para un dato.
+	 * Tries to convert data to date
 	 *
-	 * @param dato
+	 * @param datum
 	 * @return
 	 */
-	public static Date getDate(Data dato) {
-		if (dato.getTypes() != DataType.DATE) {
-			throw new TableException(TableException.ErrorType.DatoInvalido, "No se puede convertir el dato a fecha.");
+	public static Date getDate(Data datum) {
+		if (datum.getTypes() != DataType.DATE) {
+			throw new TableException(TableException.ErrorType.InvalidData, "Cannot convert value to date.");
 		}
 		try {
-			Date d = formatoFecha.parse((String) dato.valor);
+			Date d = dateFormat.parse((String) datum.value);
 			return d;
 		} catch (ParseException ex) {
-			throw new TableException(TableException.ErrorType.DatoInvalido, "No se puede convertir el dato a fecha.");
+			throw new TableException(TableException.ErrorType.InvalidData, "Cannot convert value to date.");
 		}
 	}
 
 	@Override
 	public int hashCode() {
 		int hash = 7;
-		hash = 61 * hash + Objects.hashCode(this.valor);
+		hash = 61 * hash + Objects.hashCode(this.value);
 		return hash;
 	}
 
-	/**
-	 * Devuelve true si dos datos son del mismo tipo
-	 *
-	 * @param obj
-	 * @return
-	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {
@@ -195,58 +179,58 @@ public class Data implements java.io.Serializable, Comparable<Data> {
 		}
 		final Data other = (Data) obj;
 
-		// Verificar null
-		if (this.valor == null && other.valor == null) {
+		// Check null
+		if (this.value == null && other.value == null) {
 			return true;
 		}
 
-		if (!Objects.equals(this.valor, other.valor)) {
+		if (!Objects.equals(this.value, other.value)) {
 			return false;
 		}
 		return true;
 	}
 
 	/**
-	 * Permite comparar dos datos.
+	 * Compares two values
 	 *
 	 * @param t
 	 * @return
 	 */
 	@Override
 	public int compareTo(Data t) {
-		DataType tipoIzq = this.getTypes();
-		DataType tipoDer = t.getTypes();
+		DataType leftType = this.getTypes();
+		DataType rightType = t.getTypes();
 
-		// Verifica el caso null
-		if (tipoIzq == NULL || tipoDer == NULL) {
-			if (tipoIzq == tipoDer) {
+		// NULL case
+		if (leftType == NULL || rightType == NULL) {
+			if (leftType == rightType) {
 				return 0;
-			} else if (tipoIzq == NULL) {
+			} else if (leftType == NULL) {
 				return -1;
 			} else {
 				return 1;
 			}
 		}
 
-		if (tipoIzq != tipoDer) {
-			throw new TableException(TableException.ErrorType.DatoInvalido,
-				String.format("No se pueden comparar datos con tipo %s y %s.", tipoIzq.name(), tipoDer.name()));
+		if (leftType != rightType) {
+			throw new TableException(TableException.ErrorType.InvalidData,
+				String.format("Fields of type %s and %s cannot be compared.", leftType.name(), rightType.name()));
 		}
 
-		switch (tipoIzq) {
+		switch (leftType) {
 			case INT:
-				return Integer.compare((Integer) this.valor, (Integer) t.valor);
+				return Integer.compare((Integer) this.value, (Integer) t.value);
 			case FLOAT:
-				return Float.compare((Float) this.valor, (Float) t.valor);
+				return Float.compare((Float) this.value, (Float) t.value);
 			case CHAR:
-				return ((String) this.valor).compareTo((String) t.valor);
+				return ((String) this.value).compareTo((String) t.value);
 			case DATE: {
 				try {
-					Date izq = formatoFecha.parse((String) this.valor);
-					Date der = formatoFecha.parse((String) t.valor);
-					return izq.compareTo(der);
+					Date leftDate = dateFormat.parse((String) this.value);
+					Date rightDate = dateFormat.parse((String) t.value);
+					return leftDate.compareTo(rightDate);
 				} catch (ParseException ex) {
-					throw new TableException(TableException.ErrorType.DatoInvalido, "No se puede parsear la fecha: " + ex.getMessage());
+					throw new TableException(TableException.ErrorType.InvalidData, "Date cannot be parsed: " + ex.getMessage());
 				}
 			}
 			default:
@@ -255,65 +239,65 @@ public class Data implements java.io.Serializable, Comparable<Data> {
 	}
 
 	/**
-	 * Devuelve un dato nuevo con el valor del actual convertido al nuevo tipo.
+	 * Converts a data to another type.
 	 *
-	 * @param tipoConvertir Tipo al cual se desea convertir.
-	 * @return Nuevo Dato
+	 * @param targetType Target type
+	 * @return New data
 	 * @throws TableException Si la conversión no es posible.
 	 */
-	public Data convertTo(DataType tipoConvertir) throws TableException {
-		// Verifica si tienen el mismo tipo
-		if (this.getTypes() == tipoConvertir) {
-			return new Data(this.valor);
+	public Data convertTo(DataType targetType) throws TableException {
+		// Checks if same type
+		if (this.getTypes() == targetType) {
+			return new Data(this.value);
 		}
 
-		// Verifica si el destino es NULL
-		if (tipoConvertir == NULL) {
+		// Checks NULL
+		if (targetType == NULL) {
 			return new Data(null);
 		}
 
-		// Verifica si el actual es NULL
+		// Checks current is NULL
 		if (this.getTypes() == NULL) {
-			throw new TableException(TableException.ErrorType.DatoInvalido,
-				"No se puede convertir el dato de NULL a " + tipoConvertir.name());
+			throw new TableException(TableException.ErrorType.InvalidData,
+				"No se puede convertir el dato de NULL a " + targetType.name());
 		}
 
-		// Verifica si la conversion es a char
-		if (tipoConvertir == CHAR) {
-			return new Data(this.valor.toString(), CHAR);
+		// Check conversion to CHAR
+		if (targetType == CHAR) {
+			return new Data(this.value.toString(), CHAR);
 		}
 
-		// Conversión de CHAR a otro
+		// Conversion from CHAR
 		try {
 			if (this.getTypes() == CHAR) {
-				switch (tipoConvertir) {
+				switch (targetType) {
 					case INT:
-						return new Data(Integer.parseInt((String) this.valor));
+						return new Data(Integer.parseInt((String) this.value));
 					case FLOAT:
-						return new Data(Float.parseFloat((String) this.valor));
+						return new Data(Float.parseFloat((String) this.value));
 					default:
-						throw new TableException(TableException.ErrorType.DatoInvalido,
-							"No se puede convertur el dato de CHAR a " + tipoConvertir.name());
+						throw new TableException(TableException.ErrorType.InvalidData,
+							"Cannot convert CHAR value to " + targetType.name());
 				}
 			}
 		} catch (TableException | NumberFormatException ex) {
-			throw new TableException(TableException.ErrorType.DatoInvalido,
-				String.format("No se puede convertir el dato de CHAR a %s. (%s)", tipoConvertir.name(), ex.getMessage()));
+			throw new TableException(TableException.ErrorType.InvalidData,
+				String.format("Cannot conver CHAR value to %s (%s).", targetType.name(), ex.getMessage()));
 		}
 
-		// Convertir de INT a otro
-		if (this.getTypes() == INT && tipoConvertir == FLOAT) {
-			return new Data(((Number) this.valor).floatValue(), FLOAT);
+		// INT to other
+		if (this.getTypes() == INT && targetType == FLOAT) {
+			return new Data(((Number) this.value).floatValue(), FLOAT);
 		}
 
-		// Convertir FLOAT a otro
-		if (this.getTypes() == FLOAT && tipoConvertir == INT) {
-			return new Data(((Number) this.valor).intValue(), INT);
+		// Convert from FLOAT
+		if (this.getTypes() == FLOAT && targetType == INT) {
+			return new Data(((Number) this.value).intValue(), INT);
 		}
 
-		// CONVERSIÓN NO SOPORTADA
-		throw new TableException(TableException.ErrorType.DatoInvalido,
-			String.format("No se puede convertir el dato de %s a %s.",
-				this.getTypes().name(), tipoConvertir.name()));
+		// Unsupported conversion
+		throw new TableException(TableException.ErrorType.InvalidData,
+			String.format("Cannot convert value from %s to %s.",
+				this.getTypes().name(), targetType.name()));
 	}
 }

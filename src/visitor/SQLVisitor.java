@@ -107,7 +107,18 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object> {
 
 	@Override
 	public Object visitDropDatabase(SQLGrammarParser.DropDatabaseContext ctx) {
-		Table[] totalTables = Database.findDatabase(ctx.ID().getText()).getTables();
+		Table[] totalTables;
+		try{
+			 totalTables = Database.findDatabase(ctx.ID().getText()).getTables();
+		}catch(DatabaseException exception){
+			// If the database doesn't exist, ignore error
+			if(exception.getErrorType() != DatabaseException.ErrorType.NonExistent)
+				throw exception;
+			else{
+				MessagePrinter.printUserMessage(String.format("Cannot drop database %s. Doesn't exist.", ctx.ID().getText()));
+				return true;
+			}
+		}
 		int rowAmount = 0;
 
 		for (int i = 0; i < totalTables.length; i++) {
@@ -423,7 +434,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object> {
 			MessagePrinter.printUserMessage(String.format("Column %s eliminated from table %s.", ctx.ID(), currentTable.getTableName()));
 			return true;
 
-			// Eliminate contraint
+			// Eliminate constraint
 		} else if (ctx.DROP() != null && ctx.CONSTRAINT() != null) {
 			currentTable.deleteRestriction(ctx.ID().getText());
 			MessagePrinter.printUserMessage(String.format("Constraint %s eliminated from table %s.", ctx.ID(), currentTable.getTableName()));
@@ -545,7 +556,7 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<Object> {
 			if (testCondition.getUsedColumns().length == 0) {
 				objetos.add(node.evaluate(null));
 			} else {
-				throw new TableException(TableException.ErrorType.ErrorFatal, "Reference cannot be inserted in a table.");
+				throw new TableException(TableException.ErrorType.FatalError, "Reference cannot be inserted in a table.");
 			}
 		}
 

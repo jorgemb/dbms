@@ -507,7 +507,7 @@ public class Table {
 	 */
 	private void saveTable() throws TableException {
 		if (!isValid()) {
-			throw new TableException(TableException.ErrorType.TablaNoEsValida, tableName);
+			throw new TableException(TableException.ErrorType.InvalidTable, tableName);
 		}
 
 		try (BufferedOutputStream buffer = new BufferedOutputStream(new FileOutputStream(tableFile));

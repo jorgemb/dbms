@@ -353,7 +353,7 @@ public class Database {
 			return;
 		}
 
-		rootDirectory = new File(Configuration.getDatum(Configuration.DIRECTORY_DATABASE));
+		rootDirectory = new File(Configuration.getValue(Configuration.DIRECTORY_DATABASE));
 
 		// Creates root directory
 		if (!rootDirectory.exists()) {

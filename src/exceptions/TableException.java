@@ -1,85 +1,77 @@
 package exceptions;
 
 /**
- *
+ * Represents various table exceptions.
  * @author Jorge
  */
 public class TableException extends DBMSException {
 
 	public enum ErrorType {
-		DatoInvalido,
+		InvalidData,
 		InvalidSchema,
 		SchemaDoesNotMatch,
 		TableDoesNotExist,
 		TableAlreadyExists,
-		TablaNoEsValida,
+		InvalidTable,
 		ColumnAlreadyExists,
 		ColumnDoesNotExist,
 		RestrictionAlreadyExists,
-		RestriccionNoExiste,
+		RestrictionDoesNotExist,
 		RestrictionFailure,
 		ErrorInRestrictionParameters,
 		ReferenceError,
-		ErrorFatal
+		FatalError
 	}
 
-	private ErrorType tipoError;
-	private String detallesError;
+	private ErrorType errorType;
+	private String errorDetails;
 
 	/**
-	 * Constructor con error fatal.
+	 * Fatal error constructor
 	 *
-	 * @param detallesError
+	 * @param errorDetails
 	 */
-	public TableException(String detallesError) {
-		super(detallesError);
-		this.detallesError = detallesError;
-		this.tipoError = ErrorType.ErrorFatal;
+	public TableException(String errorDetails) {
+		super(errorDetails);
+		this.errorDetails = errorDetails;
+		this.errorType = ErrorType.FatalError;
 	}
 
 	/**
-	 * Ingresa un error con los detalles dados.
+	 * Exception with details
 	 *
-	 * @param tipoError
-	 * @param detallesError
+	 * @param errorType
+	 * @param errorDetails
 	 */
-	public TableException(ErrorType tipoError, String detallesError) {
-		super(detallesError);
-		this.tipoError = tipoError;
-		this.detallesError = detallesError;
+	public TableException(ErrorType errorType, String errorDetails) {
+		super(errorDetails);
+		this.errorType = errorType;
+		this.errorDetails = errorDetails;
 	}
 
-	/**
-	 * @return Devuelve el tipo de error.
-	 */
-	public ErrorType obtenerTipoError() {
-		return tipoError;
+	public ErrorType getErrorType() {
+		return errorType;
 	}
 
-	/**
-	 * Devuelve el mensaje de error.
-	 *
-	 * @return Mensaje de error.
-	 */
 	@Override
 	public String getMessage() {
-		switch (tipoError) {
+		switch (errorType) {
 			case TableAlreadyExists:
-				return String.format("Ya existe una tabla con nombre: %s", detallesError);
+				return String.format("Table with name %s already exists.", errorDetails);
 			case TableDoesNotExist:
-				return String.format("No existe la tabla con nombre: %s", detallesError);
-			case TablaNoEsValida:
-				return String.format("La tabla %s no es válida.", detallesError);
+				return String.format("Table %s does not exist.", errorDetails);
+			case InvalidTable:
+				return String.format("Invalid table %s.", errorDetails);
 			case ColumnAlreadyExists:
-				return String.format("Ya existe una columna con nombre: %s", detallesError);
+				return String.format("Column %s already exists.", errorDetails);
 			case ColumnDoesNotExist:
-				return String.format("No existe la columna con nombre: %s", detallesError);
+				return String.format("Column %s does not exist.", errorDetails);
 			case RestrictionAlreadyExists:
-				return String.format("Ya existe una restricción con nombre: %s", detallesError);
-			case RestriccionNoExiste:
-				return String.format("No existe la restricción con nombre: %s", detallesError);
+				return String.format("Restriction %s already exists.", errorDetails);
+			case RestrictionDoesNotExist:
+				return String.format("Restriction %s does not exist.", errorDetails);
 			default:
-				return this.detallesError;
+				return this.errorDetails;
 		}
 	}
 
